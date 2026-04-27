@@ -1,0 +1,86 @@
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE / editors
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Documentation / local notes
+/docs/
+
+# Laravel backend
+/backend/vendor/
+/backend/node_modules/
+/backend/.env
+/backend/.env.*
+!/backend/.env.example
+/backend/storage/*.key
+/backend/storage/logs/*.log
+/backend/storage/framework/cache/*
+/backend/storage/framework/sessions/*
+/backend/storage/framework/views/*
+/backend/bootstrap/cache/*.php
+/backend/public/storage
+/backend/.phpunit.result.cache
+
+# Laravel testing / coverage
+/backend/coverage/
+/backend/.coverage
+/backend/tests/coverage/
+
+# Frontend
+/frontend/node_modules/
+/frontend/dist/
+/frontend/.env
+/frontend/.env.*
+!/frontend/.env.example
+
+# Vite / Vue
+/frontend/.vite/
+
+# Capacitor / Android
+/frontend/android/.gradle/
+/frontend/android/app/build/
+/frontend/android/build/
+/frontend/android/local.properties
+/frontend/android/.idea/
+/frontend/android/*.iml
+/frontend/android/captures/
+/frontend/android/.externalNativeBuild/
+/frontend/android/.cxx/
+
+# Capacitor generated files / cache
+/frontend/ios/
+/frontend/.capacitor/
+
+# Docker / local volumes
+/docker/mysql/data/
+/mysql_data/
+/data/
+
+# Composer
+composer.phar
+
+# PHPUnit
+.phpunit.cache/
+
+# Build artifacts
+*.zip
+*.tar
+*.tar.gz
+*.rar
