@@ -45,11 +45,14 @@ const syncLabel = computed(() => chats.lastSyncAt ? formatTime(chats.lastSyncAt.
       >
         <span class="chat-row-main">
           <strong>{{ chat.external_user.display_name }}</strong>
-          <small>{{ assignmentLabel(chat.assignment_state, chat.assigned_operator?.name) }}</small>
+          <small :class="['assignment-chip', { assigned: chat.assignment_state === 'assigned' }]">
+            {{ assignmentLabel(chat.assignment_state, chat.assigned_operator?.name) }}
+          </small>
           <span class="preview">{{ chat.last_message_preview || 'Сообщений пока нет' }}</span>
         </span>
         <span class="chat-row-meta">
           <time>{{ formatTime(chat.last_message_at) }}</time>
+          <span class="channel-tag">{{ chat.channel.code }}</span>
           <span v-if="chat.unread_count" class="unread-badge">{{ chat.unread_count }}</span>
         </span>
       </button>

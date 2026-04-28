@@ -31,9 +31,12 @@ async function logout() {
 <template>
   <div class="workspace-shell">
     <header class="topbar">
-      <div>
-        <p class="eyebrow">Call Center Operator</p>
-        <h1>Операторская панель</h1>
+      <div class="brand-lockup">
+        <span class="brand-mark small" aria-hidden="true">ОП</span>
+        <div>
+          <p class="eyebrow">Call Center Operator</p>
+          <h1>Операторская панель</h1>
+        </div>
       </div>
       <div class="topbar-actions">
         <a v-if="auth.isAdmin" class="ghost-link" :href="`${API_BASE_URL}/openapi.json`" target="_blank" rel="noreferrer">Swagger/OpenAPI</a>

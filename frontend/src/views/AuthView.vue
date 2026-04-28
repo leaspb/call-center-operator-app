@@ -23,7 +23,7 @@ async function submit() {
 <template>
   <main class="auth-shell">
     <section class="auth-panel" aria-labelledby="auth-title">
-      <div class="brand-mark" aria-hidden="true">CC</div>
+      <div class="brand-mark" aria-hidden="true">ОП</div>
       <p class="eyebrow">Рабочее место оператора</p>
       <h1 id="auth-title">{{ mode === 'register' ? 'Первичная регистрация администратора' : 'Вход в консоль' }}</h1>
       <p class="muted">

@@ -41,8 +41,10 @@ watch(() => chats.messages.length, async () => {
       <div>
         <p class="eyebrow">Активный диалог</p>
         <h2>{{ title }}</h2>
-        <p v-if="chats.selectedChat" class="muted">
-          {{ chats.selectedChat.channel.name || chats.selectedChat.channel.code }} · #{{ chats.selectedChat.id }}
+        <p v-if="chats.selectedChat" class="status-line">
+          <span>{{ chats.selectedChat.channel.name || chats.selectedChat.channel.code }} · #{{ chats.selectedChat.id }}</span>
+          <span v-if="owner" class="assignment-chip assigned">Владелец: {{ owner }}</span>
+          <span v-else class="assignment-chip">Свободный диалог</span>
         </p>
       </div>
       <div v-if="chats.selectedChat" class="thread-actions">
