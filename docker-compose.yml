@@ -46,6 +46,7 @@ services:
 
   queue:
     build: .
+    restart: unless-stopped
     working_dir: /var/www/html
     command: php artisan queue:work redis --queue=outbound,default --sleep=1 --tries=1
     volumes:
@@ -79,6 +80,7 @@ services:
 
   scheduler:
     build: .
+    restart: unless-stopped
     working_dir: /var/www/html
     command: sh -c 'while true; do php artisan schedule:run --verbose --no-interaction; sleep 60; done'
     volumes:

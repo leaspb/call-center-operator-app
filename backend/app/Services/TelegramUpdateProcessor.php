@@ -26,8 +26,9 @@ class TelegramUpdateProcessor
             return ['ok' => true, 'duplicate' => false, 'ignored' => true];
         }
 
-        return DB::transaction(function () use ($payload, $updateId, $messagePayload) {
-            $channel = Channel::firstOrCreate(['code' => 'telegram'], ['name' => 'Telegram', 'config' => []]);
+        $channel = $this->telegramChannel();
+
+        return DB::transaction(function () use ($payload, $updateId, $messagePayload, $channel) {
             $hash = hash('sha256', json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
             $alreadyProcessed = ProcessedProviderUpdate::query()
                 ->where('channel_id', $channel->id)
@@ -39,13 +40,20 @@ class TelegramUpdateProcessor
                 return ['ok' => true, 'duplicate' => true];
             }
 
-            ProcessedProviderUpdate::create([
+            $processedAt = now();
+            $inserted = ProcessedProviderUpdate::query()->insertOrIgnore([
                 'channel_id' => $channel->id,
                 'provider' => 'telegram',
                 'provider_update_id' => $updateId,
                 'raw_payload_hash' => $hash,
-                'processed_at' => now(),
+                'processed_at' => $processedAt,
+                'created_at' => $processedAt,
+                'updated_at' => $processedAt,
             ]);
+
+            if ($inserted === 0) {
+                return ['ok' => true, 'duplicate' => true];
+            }
 
             $from = Arr::get($messagePayload, 'from', []);
             $chatPayload = Arr::get($messagePayload, 'chat', []);
@@ -107,5 +115,24 @@ class TelegramUpdateProcessor
 
             return ['ok' => true, 'duplicate' => false, 'chat' => $chat->fresh(['channel', 'externalUser', 'assignedOperator']), 'message' => $message->fresh(['deliveries', 'reads.user'])];
         });
+    }
+
+    private function telegramChannel(): Channel
+    {
+        $channel = Channel::query()->where('code', 'telegram')->first();
+        if ($channel) {
+            return $channel;
+        }
+
+        $now = now();
+        Channel::query()->insertOrIgnore([
+            'code' => 'telegram',
+            'name' => 'Telegram',
+            'config' => json_encode([]),
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+
+        return Channel::query()->where('code', 'telegram')->firstOrFail();
     }
 }
