@@ -1,4 +1,4 @@
-FROM php:8.3-fpm-alpine
+FROM php:8.4-fpm-alpine
 
 WORKDIR /var/www/html
 
@@ -10,10 +10,12 @@ RUN apk add --no-cache bash git icu-dev libzip-dev oniguruma-dev mysql-client $P
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 COPY backend/composer.json backend/composer.lock ./
-RUN composer install --no-interaction --prefer-dist --optimize-autoloader
+RUN composer install --no-interaction --prefer-dist --optimize-autoloader --no-scripts
 
 COPY backend/ ./
-RUN chown -R www-data:www-data storage bootstrap/cache
+RUN composer dump-autoload --optimize \
+    && php artisan package:discover --ansi \
+    && chown -R www-data:www-data storage bootstrap/cache
 
 EXPOSE 9000
 CMD ["php-fpm"]

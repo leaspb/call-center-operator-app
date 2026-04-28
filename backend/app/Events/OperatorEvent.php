@@ -2,7 +2,7 @@
 
 namespace App\Events;
 
-use Illuminate\Broadcasting\Channel;
+use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
@@ -16,7 +16,7 @@ class OperatorEvent implements ShouldBroadcastNow
 
     public function broadcastOn(): array
     {
-        return [new Channel('operator.chats')];
+        return [new PrivateChannel('operator.chats')];
     }
 
     public function broadcastAs(): string

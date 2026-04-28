@@ -18,6 +18,10 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
+    ->withBroadcasting(
+        __DIR__.'/../routes/channels.php',
+        ['middleware' => ['api', 'auth:sanctum'], 'prefix' => 'api/v1'],
+    )
     ->withMiddleware(function (Middleware $middleware): void {
         // API is stateless; Sanctum personal access tokens authenticate protected routes.
         $middleware->alias(['admin' => EnsureAdmin::class]);

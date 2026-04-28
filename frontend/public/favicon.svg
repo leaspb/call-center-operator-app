@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" role="img" aria-label="Call Center Operator">
+  <rect width="48" height="48" rx="12" fill="#ffffff"/>
+  <path d="M8 12h32" stroke="#d71920" stroke-width="4" stroke-linecap="round"/>
+  <path d="M8 24h32" stroke="#171717" stroke-width="4" stroke-linecap="round"/>
+  <path d="M8 36h22" stroke="#d71920" stroke-width="4" stroke-linecap="round"/>
+</svg>

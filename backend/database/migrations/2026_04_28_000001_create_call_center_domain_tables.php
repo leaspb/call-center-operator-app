@@ -110,7 +110,7 @@ return new class extends Migration
             $table->string('raw_payload_hash', 64);
             $table->timestamp('processed_at');
             $table->timestamps();
-            $table->unique(['channel_id', 'provider', 'provider_update_id']);
+            $table->unique(['channel_id', 'provider', 'provider_update_id'], 'ppu_channel_provider_update_unique');
         });
 
         Schema::create('audit_logs', function (Blueprint $table) {
