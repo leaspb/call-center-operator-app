@@ -50,6 +50,7 @@ pnpm-debug.log*
 /frontend/.env
 /frontend/.env.*
 !/frontend/.env.example
+!/frontend/.env.android.example
 
 # Vite / Vue
 /frontend/.vite/
