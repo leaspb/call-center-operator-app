@@ -15,14 +15,25 @@ use App\Services\ChatAssignmentService;
 use App\Services\OutboxPoller;
 use App\Services\Telegram\TelegramAdapter;
 use App\Services\Telegram\TelegramSendResult;
+use App\Services\TelegramPollingService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
 use Laravel\Sanctum\Sanctum;
 use RuntimeException;
 use Tests\TestCase;
+
+class SuccessfulTelegramAdapter implements TelegramAdapter
+{
+    public function sendText(Chat $chat, Message $message): TelegramSendResult
+    {
+        return new TelegramSendResult(true, 'test-'.$message->id);
+    }
+}
 
 class RetryingTelegramAdapter implements TelegramAdapter
 {
@@ -76,6 +87,16 @@ class BackendMvpTest extends TestCase
             ->assertHeader('X-Frame-Options', 'DENY')
             ->assertHeader('Referrer-Policy', 'no-referrer')
             ->assertHeader('Content-Security-Policy', "default-src 'self'; frame-ancestors 'none'; base-uri 'none'");
+    }
+
+    public function test_swagger_response_allows_its_documented_assets(): void
+    {
+        config(['app.key' => 'base64:'.base64_encode(str_repeat('a', 32))]);
+
+        $this->get('/swagger')
+            ->assertOk()
+            ->assertSee('SwaggerUIBundle', false)
+            ->assertHeader('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com; style-src 'self' 'unsafe-inline' https://unpkg.com; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'");
     }
 
     public function test_admin_can_create_grant_admin_and_reset_password(): void
@@ -154,6 +175,35 @@ class BackendMvpTest extends TestCase
 
         $this->assertSame(1, Message::where('direction', 'inbound')->count());
         $this->assertDatabaseHas('processed_provider_updates', ['provider' => 'telegram', 'provider_update_id' => '1001']);
+    }
+
+    public function test_telegram_polling_processes_getupdates_response_and_stores_next_offset(): void
+    {
+        config(['services.telegram.bot_token' => '123456:test-token']);
+        Cache::forget(TelegramPollingService::CACHE_KEY);
+        Http::fake([
+            'https://api.telegram.org/bot123456:test-token/getUpdates' => Http::response([
+                'ok' => true,
+                'result' => [
+                    $this->telegramPayload(3001, 7001, 'Polling hello', 77001),
+                    ['update_id' => 3002, 'callback_query' => ['id' => 'ignored-for-mvp']],
+                ],
+            ]),
+        ]);
+
+        $result = app(TelegramPollingService::class)->poll(limit: 2, timeout: 0);
+
+        $this->assertTrue($result['ok']);
+        $this->assertSame(2, $result['received']);
+        $this->assertSame(1, $result['processed']);
+        $this->assertSame(1, $result['ignored']);
+        $this->assertSame(3003, $result['next_offset']);
+        $this->assertSame(3003, Cache::get(TelegramPollingService::CACHE_KEY));
+        $this->assertDatabaseHas('messages', ['direction' => 'inbound', 'body' => 'Polling hello']);
+        Http::assertSent(fn ($request) => $request->url() === 'https://api.telegram.org/bot123456:test-token/getUpdates'
+            && $request['limit'] === 2
+            && $request['timeout'] === 0
+            && $request['allowed_updates'] === ['message', 'edited_message']);
     }
 
     public function test_unsupported_telegram_media_is_stored_as_placeholder_message(): void
@@ -428,7 +478,7 @@ class BackendMvpTest extends TestCase
 
     public function test_send_job_ignores_stale_outbox_claim_token(): void
     {
-        config(['services.telegram.fake' => true]);
+        $this->app->bind(TelegramAdapter::class, fn () => new SuccessfulTelegramAdapter);
         $operator = User::factory()->create(['role' => 'operator']);
         $chat = $this->makeChatWithInbound('Hi');
         $message = $chat->messages()->create(['direction' => 'outbound', 'operator_id' => $operator->id, 'type' => 'text', 'body' => 'Stale worker']);
@@ -476,9 +526,9 @@ class BackendMvpTest extends TestCase
         $this->assertDatabaseHas('audit_logs', ['event_type' => 'chat.auto_released', 'target_id' => $chat->id]);
     }
 
-    public function test_send_job_marks_fake_delivery_sent_and_retry_backoff_is_exact(): void
+    public function test_send_job_marks_successful_delivery_sent_and_retry_backoff_is_exact(): void
     {
-        config(['services.telegram.fake' => true]);
+        $this->app->bind(TelegramAdapter::class, fn () => new SuccessfulTelegramAdapter);
         $operator = User::factory()->create(['role' => 'operator']);
         $chat = $this->makeChatWithInbound('Hi');
         $chat->forceFill([
@@ -498,7 +548,7 @@ class BackendMvpTest extends TestCase
         (new SendOutboundMessage($outbox->id))->handle(app(TelegramAdapter::class), app(AuditLogger::class));
         $delivery->refresh();
         $this->assertSame('sent', $delivery->status);
-        $this->assertSame('fake-'.$delivery->message_id, $delivery->provider_message_id);
+        $this->assertSame('test-'.$delivery->message_id, $delivery->provider_message_id);
         $this->assertSame('processed', $outbox->refresh()->status);
 
         $this->app->bind(TelegramAdapter::class, fn () => new RetryingTelegramAdapter);

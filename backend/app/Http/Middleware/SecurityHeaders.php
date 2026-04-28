@@ -16,12 +16,21 @@ class SecurityHeaders
         $response->headers->set('X-Frame-Options', 'DENY');
         $response->headers->set('Referrer-Policy', 'no-referrer');
         $response->headers->set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
-        $response->headers->set('Content-Security-Policy', "default-src 'self'; frame-ancestors 'none'; base-uri 'none'");
+        $response->headers->set('Content-Security-Policy', $this->contentSecurityPolicy($request));
 
         if ($request->isSecure()) {
             $response->headers->set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
         }
 
         return $response;
+    }
+
+    private function contentSecurityPolicy(Request $request): string
+    {
+        if ($request->is('swagger')) {
+            return "default-src 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com; style-src 'self' 'unsafe-inline' https://unpkg.com; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'";
+        }
+
+        return "default-src 'self'; frame-ancestors 'none'; base-uri 'none'";
     }
 }
