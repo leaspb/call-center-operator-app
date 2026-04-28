@@ -23,6 +23,7 @@ pnpm-debug.log*
 
 # Documentation / local notes
 /docs/
+.github/
 
 # Laravel backend
 /backend/vendor/

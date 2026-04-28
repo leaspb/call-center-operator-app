@@ -4,9 +4,11 @@ services:
     working_dir: /var/www/html
     volumes:
       - ./backend:/var/www/html
+      - backend-vendor:/var/www/html/vendor
     environment:
       APP_ENV: local
       APP_DEBUG: "true"
+      APP_KEY: ${APP_KEY:-}
       APP_URL: http://localhost:8000
       DB_CONNECTION: mysql
       DB_HOST: mysql
@@ -17,12 +19,17 @@ services:
       CACHE_STORE: redis
       QUEUE_CONNECTION: redis
       REDIS_HOST: redis
-      BROADCAST_CONNECTION: reverb
-      REVERB_APP_ID: callcenter
-      REVERB_APP_KEY: local-reverb-key-change-me
-      REVERB_APP_SECRET: local-reverb-secret-change-me
-      TELEGRAM_FAKE: "true"
-      TELEGRAM_WEBHOOK_SECRET: local-secret
+      BROADCAST_CONNECTION: ${BROADCAST_CONNECTION:-reverb}
+      REVERB_APP_ID: ${REVERB_APP_ID:-callcenter}
+      REVERB_APP_KEY: ${REVERB_APP_KEY:-local-reverb-key-change-me}
+      REVERB_APP_SECRET: ${REVERB_APP_SECRET:-local-reverb-secret-change-me}
+      REVERB_HOST: ${REVERB_HOST:-reverb}
+      REVERB_PORT: ${REVERB_PORT:-8080}
+      REVERB_SCHEME: ${REVERB_SCHEME:-http}
+      TELEGRAM_FAKE: ${TELEGRAM_FAKE:-true}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_WEBHOOK_SECRET: ${TELEGRAM_WEBHOOK_SECRET:-local-secret}
+      TELEGRAM_WEBHOOK_URL: ${TELEGRAM_WEBHOOK_URL:-}
     depends_on:
       - mysql
       - redis
@@ -43,9 +50,11 @@ services:
     command: php artisan queue:work redis --queue=outbound,default --sleep=1 --tries=1
     volumes:
       - ./backend:/var/www/html
+      - backend-vendor:/var/www/html/vendor
     environment:
       APP_ENV: local
       APP_DEBUG: "true"
+      APP_KEY: ${APP_KEY:-}
       DB_CONNECTION: mysql
       DB_HOST: mysql
       DB_DATABASE: call_center
@@ -53,10 +62,17 @@ services:
       DB_PASSWORD: call_center
       QUEUE_CONNECTION: redis
       REDIS_HOST: redis
-      REVERB_APP_ID: callcenter
-      REVERB_APP_KEY: local-reverb-key-change-me
-      REVERB_APP_SECRET: local-reverb-secret-change-me
-      TELEGRAM_FAKE: "true"
+      BROADCAST_CONNECTION: ${BROADCAST_CONNECTION:-reverb}
+      REVERB_APP_ID: ${REVERB_APP_ID:-callcenter}
+      REVERB_APP_KEY: ${REVERB_APP_KEY:-local-reverb-key-change-me}
+      REVERB_APP_SECRET: ${REVERB_APP_SECRET:-local-reverb-secret-change-me}
+      REVERB_HOST: ${REVERB_HOST:-reverb}
+      REVERB_PORT: ${REVERB_PORT:-8080}
+      REVERB_SCHEME: ${REVERB_SCHEME:-http}
+      TELEGRAM_FAKE: ${TELEGRAM_FAKE:-true}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_WEBHOOK_SECRET: ${TELEGRAM_WEBHOOK_SECRET:-local-secret}
+      TELEGRAM_WEBHOOK_URL: ${TELEGRAM_WEBHOOK_URL:-}
     depends_on:
       - mysql
       - redis
@@ -67,9 +83,11 @@ services:
     command: sh -c 'while true; do php artisan schedule:run --verbose --no-interaction; sleep 60; done'
     volumes:
       - ./backend:/var/www/html
+      - backend-vendor:/var/www/html/vendor
     environment:
       APP_ENV: local
       APP_DEBUG: "true"
+      APP_KEY: ${APP_KEY:-}
       DB_CONNECTION: mysql
       DB_HOST: mysql
       DB_DATABASE: call_center
@@ -77,9 +95,13 @@ services:
       DB_PASSWORD: call_center
       QUEUE_CONNECTION: redis
       REDIS_HOST: redis
-      REVERB_APP_ID: callcenter
-      REVERB_APP_KEY: local-reverb-key-change-me
-      REVERB_APP_SECRET: local-reverb-secret-change-me
+      BROADCAST_CONNECTION: ${BROADCAST_CONNECTION:-reverb}
+      REVERB_APP_ID: ${REVERB_APP_ID:-callcenter}
+      REVERB_APP_KEY: ${REVERB_APP_KEY:-local-reverb-key-change-me}
+      REVERB_APP_SECRET: ${REVERB_APP_SECRET:-local-reverb-secret-change-me}
+      REVERB_HOST: ${REVERB_HOST:-reverb}
+      REVERB_PORT: ${REVERB_PORT:-8080}
+      REVERB_SCHEME: ${REVERB_SCHEME:-http}
     depends_on:
       - mysql
       - redis
@@ -92,13 +114,18 @@ services:
       - "8080:8080"
     volumes:
       - ./backend:/var/www/html
+      - backend-vendor:/var/www/html/vendor
     environment:
       APP_ENV: local
       APP_DEBUG: "true"
-      BROADCAST_CONNECTION: reverb
-      REVERB_APP_ID: callcenter
-      REVERB_APP_KEY: local-reverb-key-change-me
-      REVERB_APP_SECRET: local-reverb-secret-change-me
+      APP_KEY: ${APP_KEY:-}
+      BROADCAST_CONNECTION: ${BROADCAST_CONNECTION:-reverb}
+      REVERB_APP_ID: ${REVERB_APP_ID:-callcenter}
+      REVERB_APP_KEY: ${REVERB_APP_KEY:-local-reverb-key-change-me}
+      REVERB_APP_SECRET: ${REVERB_APP_SECRET:-local-reverb-secret-change-me}
+      REVERB_HOST: ${REVERB_HOST:-reverb}
+      REVERB_PORT: ${REVERB_PORT:-8080}
+      REVERB_SCHEME: ${REVERB_SCHEME:-http}
       REDIS_HOST: redis
     depends_on:
       - redis
@@ -141,4 +168,5 @@ services:
 
 volumes:
   mysql-data:
+  backend-vendor:
   frontend-node-modules:

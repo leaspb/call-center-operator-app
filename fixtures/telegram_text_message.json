@@ -1,0 +1,23 @@
+{
+  "update_id": 100000001,
+  "message": {
+    "message_id": 1,
+    "date": 1710000000,
+    "chat": {
+      "id": 424242,
+      "type": "private",
+      "username": "demo_customer",
+      "first_name": "Demo",
+      "last_name": "Customer"
+    },
+    "from": {
+      "id": 424242,
+      "is_bot": false,
+      "username": "demo_customer",
+      "first_name": "Demo",
+      "last_name": "Customer",
+      "language_code": "ru"
+    },
+    "text": "Здравствуйте, нужна помощь"
+  }
+}
