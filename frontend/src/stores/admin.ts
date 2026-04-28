@@ -30,9 +30,22 @@ export const useAdminStore = defineStore('admin', {
       const response = await adminApi.changeRole(user.id, role)
       Object.assign(user, response.user)
     },
-    async resetPassword(user: User, password: string) {
-      const response = await adminApi.resetPassword(user.id, password)
+    async changeStatus(user: User, isActive: boolean) {
+      const response = await adminApi.changeStatus(user.id, isActive)
       Object.assign(user, response.user)
+    },
+    async resetPassword(user: User, password: string) {
+      if (password.length < 8) {
+        this.error = 'Пароль должен быть не короче 8 символов'
+        return
+      }
+      try {
+        const response = await adminApi.resetPassword(user.id, password)
+        Object.assign(user, response.user)
+        this.error = null
+      } catch (error) {
+        this.error = error instanceof Error ? error.message : 'Не удалось сбросить пароль'
+      }
     },
     async assignChat(chatId: number, operatorId: number): Promise<Chat> {
       const { chat } = await adminApi.assignChat(chatId, operatorId)

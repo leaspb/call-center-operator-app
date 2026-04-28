@@ -16,7 +16,7 @@ export class ApiClientError extends Error {
 
 export const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? '/api/v1').replace(/\/$/, '')
 
-let tokenProvider: () => string | null = () => localStorage.getItem('operator_token')
+let tokenProvider: () => string | null = () => sessionStorage.getItem('operator_token')
 
 export function setTokenProvider(provider: () => string | null) {
   tokenProvider = provider

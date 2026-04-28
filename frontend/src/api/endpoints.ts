@@ -1,5 +1,5 @@
 import { apiRequest } from './client'
-import type { AuditLog, AuthResponse, Chat, ChatFilter, DeliveryInfo, Message, Paginated, User } from '../types'
+import type { AuditLog, AuthResponse, Chat, ChatCursor, ChatFilter, DeliveryInfo, Message, Paginated, User } from '../types'
 
 export interface LoginPayload {
   email: string
@@ -22,23 +22,28 @@ export const adminApi = {
   users: () => apiRequest<{ data: User[] }>('/admin/users'),
   createUser: (payload: { name: string; email: string; password: string; role: 'admin' | 'operator' }) => apiRequest<{ user: User }>('/admin/users', { method: 'POST', body: JSON.stringify(payload) }),
   changeRole: (userId: number, role: 'admin' | 'operator') => apiRequest<{ user: User }>(`/admin/users/${userId}/role`, { method: 'PATCH', body: JSON.stringify({ role }) }),
+  changeStatus: (userId: number, isActive: boolean) => apiRequest<{ user: User }>(`/admin/users/${userId}/status`, { method: 'PATCH', body: JSON.stringify({ is_active: isActive }) }),
   resetPassword: (userId: number, password: string) => apiRequest<{ user: User }>(`/admin/users/${userId}/reset-password`, { method: 'POST', body: JSON.stringify({ password }) }),
   assignChat: (chatId: number, operatorId: number) => apiRequest<{ chat: Chat }>(`/admin/chats/${chatId}/assign`, { method: 'POST', body: JSON.stringify({ operator_id: operatorId }) }),
   forceReleaseChat: (chatId: number) => apiRequest<{ chat: Chat }>(`/admin/chats/${chatId}/force-release`, { method: 'POST', body: '{}' }),
-  auditLog: () => apiRequest<{ data: AuditLog[] }>('/audit-log'),
+  auditLog: (cursor?: number | null) => {
+    const params = new URLSearchParams({ limit: '50' })
+    if (cursor) params.set('cursor', String(cursor))
+    return apiRequest<Paginated<AuditLog, number>>(`/audit-log?${params.toString()}`)
+  },
 }
 
 export const chatApi = {
-  list: (filter: ChatFilter, cursor?: number | null) => {
+  list: (filter: ChatFilter, cursor?: ChatCursor | null) => {
     const params = new URLSearchParams({ filter, limit: '50' })
-    if (cursor) params.set('cursor', String(cursor))
-    return apiRequest<Paginated<Chat>>(`/chats?${params.toString()}`)
+    if (cursor) params.set('cursor', JSON.stringify(cursor))
+    return apiRequest<Paginated<Chat, ChatCursor>>(`/chats?${params.toString()}`)
   },
   show: (chatId: number) => apiRequest<{ chat: Chat }>(`/chats/${chatId}`),
   messages: (chatId: number, beforeId?: number | null) => {
     const params = new URLSearchParams({ limit: '50' })
     if (beforeId) params.set('before_id', String(beforeId))
-    return apiRequest<Paginated<Message>>(`/chats/${chatId}/messages?${params.toString()}`)
+    return apiRequest<Paginated<Message, number>>(`/chats/${chatId}/messages?${params.toString()}`)
   },
   sendMessage: (chatId: number, body: string) => apiRequest<{ message: Message; delivery: DeliveryInfo }>(`/chats/${chatId}/messages`, { method: 'POST', body: JSON.stringify({ body }) }),
   assign: (chatId: number) => apiRequest<{ chat: Chat }>(`/chats/${chatId}/assign`, { method: 'POST', body: '{}' }),

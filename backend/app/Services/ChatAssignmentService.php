@@ -2,14 +2,18 @@
 
 namespace App\Services;
 
-use App\Events\OperatorEvent;
 use App\Models\Chat;
 use App\Models\User;
+use App\Support\OperatorEventRecipients;
+use App\Support\OperatorNotifier;
 use Illuminate\Support\Facades\DB;
 
 class ChatAssignmentService
 {
-    public function __construct(private readonly AuditLogger $audit) {}
+    public function __construct(
+        private readonly AuditLogger $audit,
+        private readonly OperatorNotifier $notifier,
+    ) {}
 
     public function assignToSelf(Chat $chat, User $user): array
     {
@@ -21,7 +25,11 @@ class ChatAssignmentService
             }
 
             if ($locked->assigned_operator_id !== null && (int) $locked->assigned_operator_id !== (int) $user->id) {
-                event(new OperatorEvent('chat.assignment_conflict', ['chat_id' => $locked->id, 'requested_by_user_id' => $user->id, 'assigned_operator_id' => $locked->assigned_operator_id]));
+                $this->notifier->notify('chat.assignment_conflict', [
+                    'chat_id' => $locked->id,
+                    'requested_by_user_id' => $user->id,
+                    'assigned_operator_id' => $locked->assigned_operator_id,
+                ], OperatorEventRecipients::forUsers([$user->id, $locked->assigned_operator_id]));
 
                 return ['ok' => false, 'code' => 'CHAT_ALREADY_ASSIGNED', 'status' => 409, 'message' => 'Chat is already assigned', 'chat' => $locked->fresh(['assignedOperator'])];
             }
@@ -36,7 +44,7 @@ class ChatAssignmentService
             ])->save();
 
             $this->audit->log('chat.assigned', $user, 'chat', $locked->id, ['operator_id' => $user->id]);
-            event(new OperatorEvent('chat.assigned', ['chat_id' => $locked->id, 'operator_id' => $user->id]));
+            $this->notifier->notify('chat.assigned', ['chat_id' => $locked->id, 'operator_id' => $user->id], OperatorEventRecipients::all());
 
             return ['ok' => true, 'chat' => $locked->fresh(['assignedOperator', 'channel', 'externalUser'])];
         });
@@ -55,7 +63,7 @@ class ChatAssignmentService
                 'assignment_last_activity_at' => $now,
             ])->save();
             $this->audit->log('chat.admin_assigned', $admin, 'chat', $locked->id, ['operator_id' => $operator->id]);
-            event(new OperatorEvent('chat.assigned', ['chat_id' => $locked->id, 'operator_id' => $operator->id, 'admin_id' => $admin->id]));
+            $this->notifier->notify('chat.assigned', ['chat_id' => $locked->id, 'operator_id' => $operator->id, 'admin_id' => $admin->id], OperatorEventRecipients::all());
 
             return $locked->fresh(['assignedOperator', 'channel', 'externalUser']);
         });
@@ -77,7 +85,7 @@ class ChatAssignmentService
                 'assignment_last_activity_at' => null,
             ])->save();
             $this->audit->log($event, $actor, 'chat', $locked->id, ['previous_operator_id' => $previous]);
-            event(new OperatorEvent('chat.released', ['chat_id' => $locked->id, 'previous_operator_id' => $previous]));
+            $this->notifier->notify('chat.released', ['chat_id' => $locked->id, 'previous_operator_id' => $previous], OperatorEventRecipients::all());
 
             return $locked->fresh(['assignedOperator', 'channel', 'externalUser']);
         });
@@ -121,7 +129,7 @@ class ChatAssignmentService
                             'assignment_last_activity_at' => null,
                         ])->save();
                         $this->audit->log('chat.auto_released', null, 'chat', $locked->id, ['previous_operator_id' => $previous]);
-                        event(new OperatorEvent('chat.released', ['chat_id' => $locked->id, 'previous_operator_id' => $previous, 'reason' => 'auto_release']));
+                        $this->notifier->notify('chat.released', ['chat_id' => $locked->id, 'previous_operator_id' => $previous, 'reason' => 'auto_release'], OperatorEventRecipients::all());
                         $released++;
                     });
                 }

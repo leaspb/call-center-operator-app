@@ -21,7 +21,7 @@ class ChatPresenter
             'assignment_last_activity_at' => $chat->assignment_last_activity_at?->toISOString(),
             'last_message_at' => $chat->last_message_at?->toISOString(),
             'last_inbound_message_at' => $chat->last_inbound_message_at?->toISOString(),
-            'unread_count' => $viewer ? $this->unreadCount($chat, $viewer) : null,
+            'unread_count' => $viewer ? (int) ($chat->unread_count_for_viewer ?? $this->unreadCount($chat, $viewer)) : null,
             'last_message_preview' => $lastMessage?->body,
             'assigned_operator' => $chat->assignedOperator ? [
                 'id' => $chat->assignedOperator->id,
@@ -41,7 +41,7 @@ class ChatPresenter
                 'code' => $chat->channel->code,
                 'name' => $chat->channel->name,
             ],
-            'read_only' => $viewer ? ($chat->assigned_operator_id !== null && ! $chat->isAssignedTo($viewer) && ! $viewer->isAdmin()) : null,
+            'read_only' => $viewer ? ($chat->assigned_operator_id !== null && ! $chat->isAssignedTo($viewer)) : null,
             'created_at' => $chat->created_at?->toISOString(),
             'updated_at' => $chat->updated_at?->toISOString(),
         ];

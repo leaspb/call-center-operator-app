@@ -34,8 +34,21 @@ class HttpTelegramAdapter implements TelegramAdapter
             false,
             null,
             (string) ($response->json('error_code') ?: $status),
-            (string) ($response->json('description') ?: $response->body()),
+            $this->safeErrorMessage($status),
             $retryable,
         );
+    }
+
+    private function safeErrorMessage(int $status): string
+    {
+        if ($status === 429) {
+            return 'Telegram rate limited outbound message';
+        }
+
+        if ($status >= 500) {
+            return 'Telegram service is temporarily unavailable';
+        }
+
+        return 'Telegram rejected outbound message';
     }
 }

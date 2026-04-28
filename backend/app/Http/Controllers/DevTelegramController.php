@@ -14,8 +14,16 @@ class DevTelegramController extends Controller
 
     public function store(Request $request): JsonResponse
     {
-        if (! app()->environment(['local', 'testing']) && ! config('app.debug')) {
-            return ApiError::response('Dev Telegram replay endpoint is disabled', 'DEV_ENDPOINT_DISABLED', 403);
+        if (! app()->environment(['local', 'testing'])) {
+            if (! config('services.telegram.dev_replay_enabled')) {
+                return ApiError::response('Dev Telegram replay endpoint is disabled', 'DEV_ENDPOINT_DISABLED', 403);
+            }
+
+            $secret = (string) config('services.telegram.dev_replay_secret', '');
+            $provided = (string) $request->header('X-Dev-Telegram-Replay-Secret', '');
+            if ($secret === '' || ! hash_equals($secret, $provided)) {
+                return ApiError::response('Dev Telegram replay secret is invalid', 'INVALID_DEV_REPLAY_SECRET', 403);
+            }
         }
 
         $result = $this->processor->process($request->all());

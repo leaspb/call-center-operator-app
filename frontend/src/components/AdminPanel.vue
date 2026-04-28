@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, reactive } from 'vue'
 import { useAdminStore } from '../stores/admin'
-import type { Role } from '../types'
+import type { Role, User } from '../types'
 import { formatDateTime } from '../utils/time'
 
 const admin = useAdminStore()
@@ -16,6 +16,11 @@ async function createUser() {
   form.email = ''
   form.password = ''
   form.role = 'operator'
+}
+
+async function resetPassword(userId: number, user: User) {
+  await admin.resetPassword(user, resetPasswords[userId] || '')
+  if (!admin.error) resetPasswords[userId] = ''
 }
 </script>
 
@@ -32,7 +37,7 @@ async function createUser() {
     <form class="admin-create" @submit.prevent="createUser">
       <input v-model="form.name" required placeholder="Имя" />
       <input v-model="form.email" required type="email" placeholder="Email" />
-      <input v-model="form.password" required type="password" minlength="8" placeholder="Пароль" />
+      <input v-model="form.password" required type="password" minlength="12" placeholder="Пароль: минимум 12 символов" />
       <select v-model="form.role" aria-label="Роль">
         <option value="operator">Оператор</option>
         <option value="admin">Администратор</option>
@@ -43,6 +48,7 @@ async function createUser() {
     <div class="admin-columns">
       <div class="table-shell">
         <h3>Пользователи</h3>
+        <p v-if="admin.error" class="form-error" role="alert">{{ admin.error }}</p>
         <div v-for="user in admin.users" :key="user.id" class="admin-row">
           <div>
             <strong>{{ user.name }}</strong>
@@ -52,8 +58,11 @@ async function createUser() {
             <option value="operator">operator</option>
             <option value="admin">admin</option>
           </select>
-          <input v-model="resetPasswords[user.id]" type="password" minlength="8" placeholder="Новый пароль" />
-          <button class="secondary-button compact" type="button" @click="admin.resetPassword(user, resetPasswords[user.id] || '')">Сбросить</button>
+          <button class="secondary-button compact" type="button" @click="admin.changeStatus(user, !user.is_active)">
+            {{ user.is_active ? 'Отключить' : 'Включить' }}
+          </button>
+          <input v-model="resetPasswords[user.id]" type="password" minlength="12" placeholder="Новый пароль" />
+          <button class="secondary-button compact" type="button" @click="resetPassword(user.id, user)">Сбросить</button>
         </div>
       </div>
 

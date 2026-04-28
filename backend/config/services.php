@@ -39,5 +39,7 @@ return [
         'bot_token' => env('TELEGRAM_BOT_TOKEN', ''),
         'webhook_secret' => env('TELEGRAM_WEBHOOK_SECRET', ''),
         'fake' => env('TELEGRAM_FAKE', false),
+        'dev_replay_enabled' => env('DEV_TELEGRAM_REPLAY_ENABLED', false),
+        'dev_replay_secret' => env('DEV_TELEGRAM_REPLAY_SECRET', ''),
     ],
 ];

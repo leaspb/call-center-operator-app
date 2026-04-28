@@ -2,17 +2,21 @@
 
 namespace App\Services;
 
-use App\Events\OperatorEvent;
 use App\Models\Channel;
 use App\Models\Chat;
 use App\Models\ExternalUser;
 use App\Models\ProcessedProviderUpdate;
+use App\Support\OperatorEventRecipients;
+use App\Support\OperatorNotifier;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 
 class TelegramUpdateProcessor
 {
-    public function __construct(private readonly AuditLogger $audit) {}
+    public function __construct(
+        private readonly AuditLogger $audit,
+        private readonly OperatorNotifier $notifier,
+    ) {}
 
     public function process(array $payload): array
     {
@@ -26,9 +30,8 @@ class TelegramUpdateProcessor
             return ['ok' => true, 'duplicate' => false, 'ignored' => true];
         }
 
-        $channel = $this->telegramChannel();
-
-        return DB::transaction(function () use ($payload, $updateId, $messagePayload, $channel) {
+        return DB::transaction(function () use ($payload, $updateId, $messagePayload) {
+            $channel = $this->telegramChannel();
             $hash = hash('sha256', json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
             $alreadyProcessed = ProcessedProviderUpdate::query()
                 ->where('channel_id', $channel->id)
@@ -82,7 +85,7 @@ class TelegramUpdateProcessor
             if (! $chat) {
                 $chat = Chat::create(['channel_id' => $channel->id, 'external_user_id' => $externalUser->id, 'status' => 'open']);
                 $this->audit->log('chat.created', null, 'chat', $chat->id, ['provider' => 'telegram']);
-                event(new OperatorEvent('chat.created', ['chat_id' => $chat->id, 'channel' => 'telegram']));
+                $this->notifier->notify('chat.created', ['chat_id' => $chat->id, 'channel' => 'telegram'], OperatorEventRecipients::all());
             }
 
             if ($chat->status === 'closed') {
@@ -92,7 +95,9 @@ class TelegramUpdateProcessor
                     'assigned_by_user_id' => null,
                     'assigned_at' => null,
                     'assignment_last_activity_at' => null,
-                ]);
+                ])->save();
+                $this->audit->log('chat.reopened', null, 'chat', $chat->id, ['provider' => 'telegram']);
+                $this->notifier->notify('chat.reopened', ['chat_id' => $chat->id, 'channel' => 'telegram'], OperatorEventRecipients::all());
             }
 
             $text = Arr::get($messagePayload, 'text');
@@ -111,7 +116,11 @@ class TelegramUpdateProcessor
                 'last_inbound_message_at' => now(),
             ])->save();
             $this->audit->log('message.inbound_created', null, 'message', $message->id, ['chat_id' => $chat->id, 'provider' => 'telegram']);
-            event(new OperatorEvent('message.created', ['chat_id' => $chat->id, 'message_id' => $message->id, 'direction' => 'inbound']));
+            $messageEvent = ['chat_id' => $chat->id, 'message_id' => $message->id, 'direction' => 'inbound'];
+            $recipients = $chat->assigned_operator_id !== null
+                ? OperatorEventRecipients::forUsers([$chat->assigned_operator_id])
+                : OperatorEventRecipients::all();
+            $this->notifier->notify('message.created', $messageEvent, $recipients);
 
             return ['ok' => true, 'duplicate' => false, 'chat' => $chat->fresh(['channel', 'externalUser', 'assignedOperator']), 'message' => $message->fresh(['deliveries', 'reads.user'])];
         });
@@ -119,15 +128,11 @@ class TelegramUpdateProcessor
 
     private function telegramChannel(): Channel
     {
-        $channel = Channel::query()->where('code', 'telegram')->first();
-        if ($channel) {
-            return $channel;
-        }
-
         $now = now();
         Channel::query()->insertOrIgnore([
             'code' => 'telegram',
             'name' => 'Telegram',
+            'is_active' => true,
             'config' => json_encode([]),
             'created_at' => $now,
             'updated_at' => $now,

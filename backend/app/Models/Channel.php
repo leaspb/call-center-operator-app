@@ -10,11 +10,11 @@ class Channel extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['code', 'name', 'config'];
+    protected $fillable = ['code', 'name', 'is_active', 'config'];
 
     protected function casts(): array
     {
-        return ['config' => 'array'];
+        return ['is_active' => 'boolean', 'config' => 'array'];
     }
 
     public function externalUsers(): HasMany

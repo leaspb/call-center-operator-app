@@ -114,4 +114,16 @@ return [
 
     'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 10800),
 
+    /*
+    |--------------------------------------------------------------------------
+    | API Token Lifetime
+    |--------------------------------------------------------------------------
+    |
+    | Sanctum personal access tokens issued by the login/register endpoints are
+    | intentionally short-lived to reduce impact if a bearer token is leaked.
+    |
+    */
+
+    'api_token_ttl_minutes' => (int) env('API_TOKEN_TTL_MINUTES', 480),
+
 ];

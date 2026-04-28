@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { chatApi } from '../api/endpoints'
 import { ApiClientError } from '../api/client'
 import { useAuthStore } from './auth'
-import type { Chat, ChatFilter, DeliveryInfo, Message } from '../types'
+import type { Chat, ChatCursor, ChatFilter, DeliveryInfo, Message } from '../types'
 
 export const useChatStore = defineStore('chats', {
   state: () => ({
@@ -10,7 +10,7 @@ export const useChatStore = defineStore('chats', {
     selectedChat: null as Chat | null,
     messages: [] as Message[],
     filter: 'all' as ChatFilter,
-    nextChatCursor: null as number | null,
+    nextChatCursor: null as ChatCursor | null,
     nextMessageCursor: null as number | null,
     loadingChats: false,
     loadingMessages: false,
@@ -49,7 +49,7 @@ export const useChatStore = defineStore('chats', {
       else this.messages.push(message)
       this.messages.sort((a, b) => a.id - b.id)
     },
-    async loadChats(cursor: number | null = null) {
+    async loadChats(cursor: ChatCursor | null = null) {
       this.loadingChats = true
       this.error = null
       try {
@@ -67,17 +67,21 @@ export const useChatStore = defineStore('chats', {
       this.loadingMessages = true
       this.error = null
       try {
-        const [{ chat }, messages] = await Promise.all([chatApi.show(chatId), chatApi.messages(chatId)])
-        this.selectedChat = chat
-        this.upsertChat(chat)
-        this.messages = messages.data.slice().reverse()
-        this.nextMessageCursor = messages.next_cursor
+        await this.loadChatThread(chatId)
         await this.markVisibleInboundAsRead(useAuthStore().user?.id)
+        await this.refreshAssignmentHeartbeat()
       } catch (error) {
         this.error = error instanceof Error ? error.message : 'Не удалось открыть чат'
       } finally {
         this.loadingMessages = false
       }
+    },
+    async loadChatThread(chatId: number) {
+      const [{ chat }, messages] = await Promise.all([chatApi.show(chatId), chatApi.messages(chatId)])
+      this.selectedChat = chat
+      this.upsertChat(chat)
+      this.messages = messages.data.slice().reverse()
+      this.nextMessageCursor = messages.next_cursor
     },
     async refreshSelected() {
       if (!this.selectedChat) return
@@ -114,7 +118,7 @@ export const useChatStore = defineStore('chats', {
       const { chat } = await chatApi.close(this.selectedChat.id)
       this.upsertChat(chat)
     },
-    async heartbeat() {
+    async refreshAssignmentHeartbeat() {
       const auth = useAuthStore()
       if (!this.selectedChat || this.selectedChat.status !== 'assigned' || this.selectedChat.assigned_operator?.id !== auth.user?.id) return
       try {
@@ -130,7 +134,9 @@ export const useChatStore = defineStore('chats', {
       try {
         const response = await chatApi.sendMessage(this.selectedChat.id, body.trim())
         this.upsertMessage({ ...response.message, delivery: response.delivery, delivery_status: response.delivery.status })
-        await this.loadChats()
+        this.selectedChat.last_message_at = response.message.created_at
+        this.selectedChat.last_message_preview = response.message.body ?? null
+        this.upsertChat(this.selectedChat)
       } finally {
         this.sending = false
       }

@@ -1,6 +1,7 @@
-# Call Center Operator App
+# MVP приложения для операторов колл-центра
 
-MVP приложения для операторов call-center: Laravel backend принимает Telegram updates, хранит чаты/сообщения в MySQL, отправляет outbound-ответы через transactional outbox + Redis queue, а Vue 3 frontend даёт операторам realtime-интерфейс с назначением чатов, read receipts и admin controls. Web-клиент также упаковывается в Android через Capacitor.
+- Laravel backend принимает Telegram updates, хранит чаты/сообщения в MySQL, отправляет outbound-ответы через transactional outbox + Redis queue,
+- Vue 3 frontend даёт операторам realtime-интерфейс с назначением чатов, read receipts и admin controls. Web-клиент также упаковывается в Android через Capacitor.
 
 ## Статус MVP
 
@@ -51,6 +52,8 @@ cp frontend/.env.android.example frontend/.env.android
 ```
 
 Для локального fake Telegram режима можно оставить значения по умолчанию. Реальные секреты (`TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET`, `REVERB_APP_SECRET`) не коммитить.
+
+Auth в MVP использует Sanctum Bearer token с ограниченным TTL (`API_TOKEN_TTL_MINUTES`, по умолчанию 480 минут). Web/mobile frontend хранит token только в `sessionStorage`, чтобы не переживать закрытие вкладки/процесса WebView. Production deployment должен исключать third-party scripts и отдавать строгий CSP; переход на httpOnly SameSite cookies остаётся вариантом для более жёсткой security posture.
 
 ### 2. Сгенерировать `APP_KEY`
 
@@ -138,8 +141,10 @@ cloudflared tunnel --url http://localhost:8000
 Для local fixture replay доступен dev endpoint:
 
 ```bash
+TOKEN="<admin-or-operator-bearer-token>"
 curl -X POST http://localhost:8000/api/v1/dev/telegram/updates/simulate \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer ${TOKEN}" \
   -d @fixtures/telegram_text_message.json
 ```
 

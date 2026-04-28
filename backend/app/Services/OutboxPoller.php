@@ -23,6 +23,9 @@ class OutboxPoller
                 })->orWhere(function ($stale) use ($staleBefore) {
                     $stale->where('status', 'enqueued')
                         ->where('locked_at', '<=', $staleBefore);
+                })->orWhere(function ($staleProcessing) use ($staleBefore) {
+                    $staleProcessing->where('status', 'processing')
+                        ->where('locked_at', '<=', $staleBefore);
                 });
             })
             ->orderBy('id')
@@ -33,6 +36,11 @@ class OutboxPoller
             DB::transaction(function () use ($outbox, $workerId, $staleBefore, &$count) {
                 $locked = OutboxMessage::query()->whereKey($outbox->id)->lockForUpdate()->first();
                 if (! $locked || $locked->status === 'processed' || $locked->status === 'failed') {
+                    return;
+                }
+                if ($locked->status === 'processing') {
+                    $this->recoverStaleProcessing($locked);
+
                     return;
                 }
                 if ($locked->status === 'pending' && $locked->available_at !== null && $locked->available_at->gt(now())) {
@@ -60,7 +68,7 @@ class OutboxPoller
                     'locked_by' => $workerId,
                     'locked_at' => now(),
                 ])->save();
-                SendOutboundMessage::dispatch($locked->id)->onQueue('outbound');
+                SendOutboundMessage::dispatch($locked->id, $workerId)->onQueue('outbound');
                 $count++;
             });
         }
@@ -68,8 +76,33 @@ class OutboxPoller
         return $count;
     }
 
-    public function enqueueDueRetries(int $limit = 50): int
+    private function recoverStaleProcessing(OutboxMessage $outbox): void
     {
-        return $this->enqueue($limit);
+        $deliveryId = data_get($outbox->payload, 'delivery_id');
+        $delivery = $deliveryId ? MessageDelivery::query()->whereKey($deliveryId)->lockForUpdate()->first() : null;
+        if (! $delivery) {
+            $outbox->forceFill(['status' => 'failed', 'attempts' => $outbox->attempts + 1, 'locked_by' => null, 'locked_at' => null])->save();
+
+            return;
+        }
+        if ($delivery->status === 'sent') {
+            $outbox->forceFill(['status' => 'processed', 'locked_by' => null, 'locked_at' => null])->save();
+
+            return;
+        }
+
+        $delivery->forceFill([
+            'status' => 'failed',
+            'next_attempt_at' => null,
+            'provider_error_code' => 'WORKER_RESULT_UNKNOWN',
+            'provider_error_message' => 'Outbound provider result is unknown after worker interruption; manual review is required before retry',
+        ])->save();
+        $outbox->forceFill([
+            'status' => 'failed',
+            'available_at' => null,
+            'attempts' => $outbox->attempts + 1,
+            'locked_by' => null,
+            'locked_at' => null,
+        ])->save();
     }
 }

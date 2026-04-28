@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('password');
             $table->enum('role', ['admin', 'operator'])->default('operator')->index();
             $table->boolean('is_active')->default(true)->index();
+            $table->string('bootstrap_admin_key')->nullable()->unique();
             $table->rememberToken();
             $table->timestamps();
         });

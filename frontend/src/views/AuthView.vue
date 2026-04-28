@@ -11,12 +11,16 @@ const mode = computed(() => route.meta.mode === 'register' ? 'register' : 'login
 const form = reactive({ name: '', email: '', password: '', password_confirmation: '' })
 
 async function submit() {
-  if (mode.value === 'register') {
-    await auth.register({ ...form })
-  } else {
-    await auth.login({ email: form.email, password: form.password })
+  try {
+    if (mode.value === 'register') {
+      await auth.register({ ...form })
+    } else {
+      await auth.login({ email: form.email, password: form.password })
+    }
+    await router.push('/chats')
+  } catch {
+    // auth.error is already populated by the store.
   }
-  await router.push('/chats')
 }
 </script>
 
@@ -41,11 +45,11 @@ async function submit() {
         </label>
         <label>
           Пароль
-          <input v-model="form.password" type="password" autocomplete="current-password" required minlength="8" placeholder="минимум 8 символов" />
+          <input v-model="form.password" type="password" autocomplete="current-password" required minlength="12" placeholder="минимум 12 символов" />
         </label>
         <label v-if="mode === 'register'">
           Повтор пароля
-          <input v-model="form.password_confirmation" type="password" autocomplete="new-password" required minlength="8" />
+          <input v-model="form.password_confirmation" type="password" autocomplete="new-password" required minlength="12" />
         </label>
 
         <p v-if="auth.error" class="form-error" role="alert">{{ auth.error }}</p>

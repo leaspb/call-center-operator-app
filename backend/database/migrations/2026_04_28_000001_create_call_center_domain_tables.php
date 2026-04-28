@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -12,9 +13,18 @@ return new class extends Migration
             $table->id();
             $table->string('code')->unique();
             $table->string('name');
+            $table->boolean('is_active')->default(true);
             $table->json('config')->nullable();
             $table->timestamps();
         });
+        DB::table('channels')->insert([
+            'code' => 'telegram',
+            'name' => 'Telegram',
+            'is_active' => true,
+            'config' => json_encode([]),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
 
         Schema::create('external_users', function (Blueprint $table) {
             $table->id();
@@ -38,8 +48,8 @@ return new class extends Migration
             $table->timestamp('assigned_at')->nullable();
             $table->foreignId('assigned_by_user_id')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamp('assignment_last_activity_at')->nullable();
-            $table->timestamp('last_message_at')->nullable()->index();
-            $table->timestamp('last_inbound_message_at')->nullable();
+            $table->timestamp('last_message_at', 6)->nullable()->index();
+            $table->timestamp('last_inbound_message_at', 6)->nullable();
             $table->timestamps();
             $table->index(['channel_id', 'external_user_id', 'status']);
             $table->index(['status', 'assigned_operator_id']);

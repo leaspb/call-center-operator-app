@@ -7,7 +7,7 @@ import type { User } from '../types'
 const TOKEN_KEY = 'operator_token'
 
 function getStoredToken(): string | null {
-  return typeof localStorage?.getItem === 'function' ? localStorage.getItem(TOKEN_KEY) : null
+  return typeof sessionStorage?.getItem === 'function' ? sessionStorage.getItem(TOKEN_KEY) : null
 }
 
 export const useAuthStore = defineStore('auth', {
@@ -28,13 +28,13 @@ export const useAuthStore = defineStore('auth', {
     setSession(token: string, user: User) {
       this.token = token
       this.user = user
-      localStorage.setItem(TOKEN_KEY, token)
+      sessionStorage.setItem(TOKEN_KEY, token)
       this.initializeTokenProvider()
     },
     clearSession() {
       this.token = null
       this.user = null
-      localStorage.removeItem(TOKEN_KEY)
+      sessionStorage.removeItem(TOKEN_KEY)
       this.initializeTokenProvider()
     },
     async restore() {

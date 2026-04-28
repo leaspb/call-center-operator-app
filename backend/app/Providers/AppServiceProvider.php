@@ -22,6 +22,8 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        RateLimiter::for('auth', fn ($request) => Limit::perMinute(5)->by($request->ip() ?: 'auth'));
+        RateLimiter::for('admin-password-reset', fn ($request) => Limit::perMinute(10)->by(optional($request->user())->id ?: $request->ip() ?: 'admin-password-reset'));
         RateLimiter::for('telegram-webhook', fn ($request) => Limit::perMinute(120)->by($request->ip() ?: 'telegram-webhook'));
     }
 }

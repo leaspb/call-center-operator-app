@@ -83,9 +83,15 @@ export interface Message {
   created_at: string
 }
 
-export interface Paginated<T> {
+export interface ChatCursor {
+  inbound_null: boolean
+  last_message_at: string | null
+  id: number
+}
+
+export interface Paginated<T, C = number> {
   data: T[]
-  next_cursor: number | null
+  next_cursor: C | null
 }
 
 export interface AuthResponse {

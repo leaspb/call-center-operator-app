@@ -33,14 +33,15 @@ export function useRealtime() {
   const startHeartbeat = () => {
     if (heartbeatTimer) window.clearInterval(heartbeatTimer)
     heartbeatTimer = window.setInterval(() => {
-      chats.heartbeat()
+      chats.refreshAssignmentHeartbeat()
     }, 60_000)
   }
 
   const connect = () => {
     window.Pusher = Pusher
     const key = import.meta.env.VITE_REVERB_APP_KEY
-    if (!key || !auth.token) {
+    const userId = auth.user?.id
+    if (!key || !auth.token || !userId) {
       startPolling()
       startHeartbeat()
       return
@@ -59,16 +60,27 @@ export function useRealtime() {
         auth: { headers: { Authorization: `Bearer ${auth.token}` } },
       })
       echo = instance
-      instance.private('operator.chats')
+      const refreshActiveChat = () => {
+        if (chats.selectedChatId) chats.openChat(chats.selectedChatId)
+        else chats.loadChats()
+      }
+      const refreshListAndActiveChat = () => {
+        if (chats.selectedChatId) chats.refreshSelected()
+        else chats.loadChats()
+      }
+
+      instance.private(`operator.${userId}`)
         .listen('.chat.created', () => chats.loadChats())
-        .listen('.chat.assigned', () => chats.refreshSelected())
-        .listen('.chat.released', () => chats.refreshSelected())
+        .listen('.chat.assigned', refreshListAndActiveChat)
+        .listen('.chat.released', refreshListAndActiveChat)
+        .listen('.chat.closed', refreshListAndActiveChat)
+        .listen('.chat.reopened', refreshListAndActiveChat)
         .listen('.chat.assignment_conflict', () => chats.loadChats())
-        .listen('.message.created', () => chats.refreshSelected())
-        .listen('.message.delivery_status_changed', () => chats.refreshSelected())
-        .listen('.message.read', () => chats.refreshSelected())
+        .listen('.message.created', refreshActiveChat)
+        .listen('.message.delivery_status_changed', refreshActiveChat)
+        .listen('.message.read', refreshActiveChat)
     } catch {
-      startPolling()
+      // Echo failed; polling fallback runs unconditionally below
     }
 
     startPolling()
@@ -84,7 +96,7 @@ export function useRealtime() {
   }
 
   watch(() => chats.selectedChatId, () => {
-    chats.heartbeat()
+    chats.refreshAssignmentHeartbeat()
   })
 
   onScopeDispose(disconnect)

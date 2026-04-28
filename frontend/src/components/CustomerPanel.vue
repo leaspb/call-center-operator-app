@@ -12,7 +12,7 @@ const chats = useChatStore()
 const selectedOperatorId = ref<number | null>(null)
 
 const chat = computed(() => chats.selectedChat)
-const operators = computed(() => admin.users.filter((user) => user.is_active !== false && user.role === 'operator'))
+const operators = computed(() => admin.users.filter((user) => user.is_active && user.role === 'operator'))
 
 onMounted(() => {
   if (auth.isAdmin && admin.users.length === 0) admin.load()
@@ -75,9 +75,5 @@ async function forceRelease() {
       </section>
     </template>
 
-    <div class="next-platforms">
-      <strong>Расширение каналов</strong>
-      <p>Модель API уже показывает канал отдельно от пользователя: после MVP можно подключать другие мессенджеры без смены операторского UI.</p>
-    </div>
   </aside>
 </template>

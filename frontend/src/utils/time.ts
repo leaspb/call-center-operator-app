@@ -1,15 +1,15 @@
 const shortFormatter = new Intl.DateTimeFormat('ru-RU', {
-  timeZone: 'Europe/Moscow',
   hour: '2-digit',
   minute: '2-digit',
+  timeZone: 'Europe/Moscow',
 })
 
 const dateFormatter = new Intl.DateTimeFormat('ru-RU', {
-  timeZone: 'Europe/Moscow',
   day: '2-digit',
   month: '2-digit',
   hour: '2-digit',
   minute: '2-digit',
+  timeZone: 'Europe/Moscow',
 })
 
 export function formatTime(value?: string | null): string {

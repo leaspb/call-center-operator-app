@@ -15,7 +15,8 @@ class AuditLogController extends Controller
             'target_type' => ['sometimes', 'string'],
             'target_id' => ['sometimes', 'integer'],
             'actor_user_id' => ['sometimes', 'integer'],
-            'limit' => ['sometimes', 'integer', 'min:1', 'max:200'],
+            'limit' => ['sometimes', 'integer', 'min:1', 'max:100'],
+            'cursor' => ['sometimes', 'integer', 'min:1'],
         ]);
         $query = AuditLog::query()->with('actor')->latest('id');
         foreach (['event_type', 'target_type', 'target_id', 'actor_user_id'] as $field) {
@@ -23,9 +24,14 @@ class AuditLogController extends Controller
                 $query->where($field, $data[$field]);
             }
         }
-        $logs = $query->limit((int) ($data['limit'] ?? 100))->get();
+        if (isset($data['cursor'])) {
+            $query->where('id', '<', $data['cursor']);
+        }
+        $limit = (int) ($data['limit'] ?? 50);
+        $logs = $query->limit($limit + 1)->get();
+        $visible = $logs->take($limit);
 
-        return response()->json(['data' => $logs->map(fn (AuditLog $log) => [
+        return response()->json(['data' => $visible->map(fn (AuditLog $log) => [
             'id' => $log->id,
             'actor_user' => $log->actor ? ['id' => $log->actor->id, 'name' => $log->actor->name, 'email' => $log->actor->email] : null,
             'event_type' => $log->event_type,
@@ -35,6 +41,6 @@ class AuditLogController extends Controller
             'ip_address' => $log->ip_address,
             'request_id' => $log->request_id,
             'created_at' => $log->created_at?->toISOString(),
-        ])]);
+        ])->values(), 'next_cursor' => $logs->count() > $limit ? $visible->last()->id : null]);
     }
 }

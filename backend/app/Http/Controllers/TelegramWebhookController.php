@@ -16,7 +16,10 @@ class TelegramWebhookController extends Controller
     public function store(Request $request): JsonResponse
     {
         $expected = (string) config('services.telegram.webhook_secret');
-        if ($expected !== '' && ! hash_equals($expected, (string) $request->headers->get('X-Telegram-Bot-Api-Secret-Token'))) {
+        if ($expected === '') {
+            return ApiError::response('Telegram webhook secret is not configured', 'MISCONFIGURATION', 500);
+        }
+        if (! hash_equals($expected, (string) $request->headers->get('X-Telegram-Bot-Api-Secret-Token'))) {
             return ApiError::response('Invalid Telegram webhook secret', 'INVALID_TELEGRAM_WEBHOOK_SECRET', 403);
         }
 
