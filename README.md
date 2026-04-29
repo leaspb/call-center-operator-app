@@ -39,7 +39,7 @@ cp frontend/.env.android.example frontend/.env.android
 - `frontend/.env` содержит доступные в браузере переменные `VITE_*` для локального запуска через `npm run dev`. Секреты бэкенда туда добавлять нельзя.
 - `frontend/.env.android` содержит отдельные URL для Android-эмулятора или устройства (`10.0.2.2` вместо `localhost`).
 
-Где генерации APP_KEY можно использовать команду:
+Для генерации APP_KEY можно использовать команду:
 ```bash
 docker compose run --rm --no-deps --build backend php artisan key:generate --show
 # Скопировать выведенное base64:... значение в APP_KEY в .env

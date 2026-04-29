@@ -110,14 +110,10 @@ class ChatController extends Controller
             return ApiError::response($result['message'], $result['code'], $result['status']);
         }
 
+        $presented = $this->presenter->message($result['message']);
         return response()->json([
-            'message' => $this->presenter->message($result['message']),
-            'delivery' => [
-                'id' => $result['delivery']->id,
-                'status' => $result['delivery']->status,
-                'attempt_count' => $result['delivery']->attempt_count,
-                'next_attempt_at' => $result['delivery']->next_attempt_at?->toISOString(),
-            ],
+            'message' => $presented,
+            'delivery' => $presented['delivery'],
         ], 201);
     }
 

@@ -22,6 +22,29 @@ export function setTokenProvider(provider: () => string | null) {
   tokenProvider = provider
 }
 
+function parseJsonResponse(text: string, response: Response): unknown {
+  if (!text) return null
+
+  const contentType = response.headers.get('Content-Type') ?? ''
+  if (!contentType.includes('application/json')) {
+    throw new ApiClientError(response.status, {
+      message: response.ok ? 'Сервер вернул неожиданный формат ответа' : 'Ошибка сервера',
+      code: response.ok ? 'INVALID_RESPONSE' : 'HTTP_ERROR',
+      details: {},
+    })
+  }
+
+  try {
+    return JSON.parse(text)
+  } catch {
+    throw new ApiClientError(response.status, {
+      message: 'Сервер вернул некорректный JSON',
+      code: 'INVALID_RESPONSE',
+      details: {},
+    })
+  }
+}
+
 export async function apiRequest<T>(path: string, options: RequestInit = {}): Promise<T> {
   const token = tokenProvider()
   const headers = new Headers(options.headers)
@@ -41,7 +64,7 @@ export async function apiRequest<T>(path: string, options: RequestInit = {}): Pr
   })
 
   const text = await response.text()
-  const payload = text ? JSON.parse(text) : null
+  const payload = parseJsonResponse(text, response) as Partial<ApiErrorShape> | null
 
   if (!response.ok) {
     throw new ApiClientError(response.status, {

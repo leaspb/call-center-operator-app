@@ -10,7 +10,10 @@
     "test": "vitest run",
     "typecheck": "vue-tsc -b",
     "build:android": "vue-tsc -b && vite build --mode android",
-    "android:sync": "npm run build:android && cap sync android && npm run android:pin-agp",
+    "build:android:release": "vue-tsc -b && vite build --mode production",
+    "android:sync": "npm run android:sync:debug",
+    "android:sync:debug": "npm run build:android && CAPACITOR_ANDROID_LOCAL=1 cap sync android && npm run android:pin-agp",
+    "android:sync:release": "npm run build:android:release && cap sync android && npm run android:pin-agp",
     "android:open": "npm run android:sync && cap open android",
     "android:build": "npm run android:sync && cd android && ./gradlew assembleDebug",
     "android:pin-agp": "node scripts/pin-android-gradle-plugin.mjs"

@@ -15,7 +15,7 @@ class AiSuggestionController extends Controller
         $user = $request->user();
 
         if (! $user->isAdmin() && $chat->assigned_operator_id !== $user->id) {
-            return ApiError::response('CHAT_NOT_OWNED', 'Only the assigned operator can request a suggestion', 403);
+            return ApiError::response('Only the assigned operator can request a suggestion', 'CHAT_NOT_OWNED', 403);
         }
 
         $suggestion = $service->suggest($chat);

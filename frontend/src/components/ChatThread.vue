@@ -28,7 +28,8 @@ async function retry(message: Message) {
   if (canRetry(message) && message.delivery) await chats.retryDelivery(message.delivery)
 }
 
-watch(() => chats.messages.length, async () => {
+watch(() => chats.messages.at(-1)?.id, async (newId, oldId) => {
+  if (!newId || newId === oldId) return
   await nextTick()
   thread.value?.scrollTo({ top: thread.value.scrollHeight, behavior: 'smooth' })
 })

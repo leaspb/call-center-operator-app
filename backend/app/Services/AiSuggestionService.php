@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Chat;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -44,20 +45,24 @@ PROMPT;
             ];
         }
 
-        $response = Http::withToken($apiKey)
-            ->timeout(config('ai.timeout'))
-            ->post(rtrim(config('ai.url'), '/') . '/chat/completions', [
-                'model' => config('ai.model'),
-                'messages' => $conversation,
-                'max_tokens' => 500,
-                'temperature' => 0.5,
-            ]);
+        try {
+            $response = Http::withToken($apiKey)
+                ->timeout(config('ai.timeout'))
+                ->post(rtrim(config('ai.url'), '/') . '/chat/completions', [
+                    'model' => config('ai.model'),
+                    'messages' => $conversation,
+                    'max_tokens' => 500,
+                    'temperature' => 0.5,
+                ]);
+        } catch (ConnectionException $e) {
+            Log::warning('AI suggestion connection failed', ['error' => $e->getMessage()]);
+            return null;
+        }
 
         if (! $response->successful()) {
-            Log::error('AI suggestion request failed', [
+            Log::warning('AI suggestion request failed', [
                 'status' => $response->status(),
                 'body' => $response->body(),
-                'url' => rtrim(config('ai.url'), '/') . '/chat/completions',
                 'model' => config('ai.model'),
             ]);
             return null;

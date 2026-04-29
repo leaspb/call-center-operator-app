@@ -1,16 +1,24 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
+const isLocalAndroid = process.env.CAPACITOR_ANDROID_LOCAL === '1';
+
 const config: CapacitorConfig = {
   appId: 'com.callcenteroperator.app',
   appName: 'Call Center Operator',
   webDir: 'dist',
+  android: {
+    allowMixedContent: isLocalAndroid,
+  },
   server: {
-    // Local Android emulator uses HTTP to reach Docker on the host through 10.0.2.2.
-    // Production builds should point VITE_API_BASE_URL to HTTPS and can remove cleartext.
-    androidScheme: 'http',
-    cleartext: true,
-    allowMixedContent: true,
-  }
+    // Release default is HTTPS-only. Local emulator builds opt into HTTP through
+    // CAPACITOR_ANDROID_LOCAL=1 and the Android debug network security overlay.
+    androidScheme: isLocalAndroid ? 'http' : 'https',
+    cleartext: isLocalAndroid,
+  },
+  cordova: {
+    // Do not emit Cordova's default wildcard <access origin="*" />.
+    accessOrigins: [],
+  },
 };
 
 export default config;

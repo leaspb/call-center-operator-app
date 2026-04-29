@@ -12,7 +12,7 @@ class ChatVisibility
     {
         return $user->isAdmin()
             || ($chat->status === 'open' && $chat->assigned_operator_id === null)
-            || $chat->isAssignedTo($user);
+            || ($chat->status === 'assigned' && $chat->assigned_operator_id !== null);
     }
 
     public static function constrainVisibleTo(Builder $query, User $user): Builder
@@ -26,7 +26,9 @@ class ChatVisibility
                 ->where(function (Builder $unassigned): void {
                     $unassigned->where('status', 'open')->whereNull('assigned_operator_id');
                 })
-                ->orWhere('assigned_operator_id', $user->id);
+                ->orWhere(function (Builder $assigned): void {
+                    $assigned->where('status', 'assigned')->whereNotNull('assigned_operator_id');
+                });
         });
     }
 }
