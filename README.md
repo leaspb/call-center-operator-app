@@ -152,6 +152,54 @@ curl -X POST http://localhost:8000/api/v1/dev/telegram/updates/simulate \
   -d @fixtures/telegram_text_message.json
 ```
 
+## Переменные окружения
+
+Все переменные хранятся в корневом `.env`. Ниже описаны ключевые параметры.
+
+### Приложение
+
+| Переменная | По умолчанию | Описание |
+| --- | --- | --- |
+| `APP_KEY` | — | Секретный ключ Laravel. Генерируется один раз через `php artisan key:generate --show`. |
+| `APP_ENV` | `local` | Окружение: `local`, `production`. |
+| `APP_DEBUG` | `true` | Включает подробные ошибки. В production должен быть `false`. |
+| `APP_URL` | `http://localhost:8000` | Публичный URL бэкенда. |
+
+### База данных
+
+| Переменная | По умолчанию | Описание |
+| --- | --- | --- |
+| `DB_DATABASE` | `call_center` | Имя базы данных MySQL. |
+| `DB_USERNAME` | `call_center` | Пользователь MySQL. |
+| `DB_PASSWORD` | `call_center` | Пароль MySQL. |
+| `DB_ROOT_PASSWORD` | `root` | Root-пароль MySQL (только для Docker). |
+
+### Reverb (WebSocket)
+
+| Переменная | По умолчанию | Описание |
+| --- | --- | --- |
+| `REVERB_APP_KEY` | `callcenter` | Ключ приложения Reverb, совпадает с `VITE_REVERB_APP_KEY`. |
+| `REVERB_APP_SECRET` | — | Секрет для подписи WebSocket-соединений. Обязательно сгенерировать уникальный в production. |
+| `REVERB_APP_ID` | `callcenter` | ID приложения Reverb. |
+
+### Telegram
+
+| Переменная | По умолчанию | Описание |
+| --- | --- | --- |
+| `TELEGRAM_BOT_TOKEN` | — | Токен бота из BotFather. |
+| `TELEGRAM_WEBHOOK_SECRET` | — | Секрет для верификации webhook-запросов от Telegram. |
+| `TELEGRAM_WEBHOOK_URL` | — | Публичный HTTPS URL для регистрации webhook. |
+| `TELEGRAM_POLLING_ENABLED` | `false` | Включает polling-режим: планировщик опрашивает Telegram каждые 10 секунд через `getUpdates`. Удобно для локальной разработки без публичного URL. Не совместим с активным webhook — перед включением выполните `deleteWebhook`. |
+| `TELEGRAM_POLLING_LIMIT` | `20` | Максимальное количество обновлений за один запрос к `getUpdates` (1–100). |
+
+### ИИ-подсказки
+
+| Переменная | По умолчанию | Описание |
+| --- | --- | --- |
+| `AI_API_URL` | `https://api.openai.com/v1` | URL OpenAI-совместимого API. Например, для OpenRouter: `https://openrouter.ai/api/v1`. |
+| `AI_API_KEY` | — | Ключ API. Если не задан, кнопка «Подсказка» вернёт ошибку 503. |
+| `AI_MODEL` | `openai/gpt-4o-mini` | Модель для генерации подсказок. |
+
 ## Локальный запуск фронтенда
 
 ```bash

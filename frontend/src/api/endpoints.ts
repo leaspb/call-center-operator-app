@@ -53,4 +53,5 @@ export const chatApi = {
   heartbeat: (chatId: number) => apiRequest<{ chat: Chat }>(`/chats/${chatId}/heartbeat`, { method: 'POST', body: '{}' }),
   markRead: (messageId: number) => apiRequest<{ message: Message }>(`/messages/${messageId}/read`, { method: 'POST', body: '{}' }),
   retryDelivery: (deliveryId: number) => apiRequest<{ delivery: DeliveryInfo }>(`/deliveries/${deliveryId}/retry`, { method: 'POST', body: '{}' }),
+  aiSuggestion: (chatId: number) => apiRequest<{ ok: boolean; suggestion: string }>(`/chats/${chatId}/ai-suggestion`),
 }

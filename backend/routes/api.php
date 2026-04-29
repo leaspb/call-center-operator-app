@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AdminChatController;
 use App\Http\Controllers\AdminUserController;
+use App\Http\Controllers\AiSuggestionController;
 use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ChatController;
@@ -33,6 +34,7 @@ Route::prefix('v1')->group(function (): void {
         Route::post('/chats/{chat}/release', [ChatController::class, 'release']);
         Route::post('/chats/{chat}/close', [ChatController::class, 'close']);
         Route::post('/chats/{chat}/heartbeat', [ChatController::class, 'heartbeat']);
+        Route::get('/chats/{chat}/ai-suggestion', AiSuggestionController::class);
         Route::post('/messages/{message}/read', [MessageReadController::class, 'store']);
         Route::post('/deliveries/{delivery}/retry', DeliveryRetryController::class);
 
