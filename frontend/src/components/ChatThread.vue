@@ -13,7 +13,6 @@ const thread = ref<HTMLElement | null>(null)
 const title = computed(() => chats.selectedChat?.external_user.display_name ?? 'Выберите диалог')
 const owner = computed(() => chats.selectedChat?.assigned_operator?.name ?? null)
 const canAssign = computed(() => chats.selectedChat?.status === 'open' && !chats.selectedChat?.assigned_operator)
-const isMine = computed(() => chats.selectedChat?.assigned_operator?.id === auth.user?.id)
 const readOnlyReason = computed(() => {
   if (!chats.selectedChat) return ''
   if (chats.selectedChat.status === 'closed') return 'Диалог закрыт: отправка недоступна.'
@@ -43,14 +42,12 @@ watch(() => chats.messages.length, async () => {
         <h2>{{ title }}</h2>
         <p v-if="chats.selectedChat" class="status-line">
           <span>{{ chats.selectedChat.channel.name || chats.selectedChat.channel.code }} · #{{ chats.selectedChat.id }}</span>
-          <span v-if="owner" class="assignment-chip assigned">Владелец: {{ owner }}</span>
-          <span v-else class="assignment-chip">Свободный диалог</span>
         </p>
       </div>
       <div v-if="chats.selectedChat" class="thread-actions">
+        <span v-if="owner" class="assignment-chip assigned owner-chip">Владелец: {{ owner }}</span>
+        <span v-else class="assignment-chip owner-chip">Свободный диалог</span>
         <button v-if="canAssign" class="primary-button compact" type="button" @click="chats.assignSelected()">Взять в работу</button>
-        <button v-if="isMine" class="secondary-button compact" type="button" @click="chats.releaseSelected()">Освободить</button>
-        <button v-if="isMine || auth.isAdmin" class="secondary-button compact" type="button" @click="chats.closeSelected()">Закрыть</button>
       </div>
     </header>
 

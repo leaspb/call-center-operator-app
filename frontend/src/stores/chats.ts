@@ -9,7 +9,7 @@ export const useChatStore = defineStore('chats', {
     chats: [] as Chat[],
     selectedChat: null as Chat | null,
     messages: [] as Message[],
-    filter: 'all' as ChatFilter,
+    filter: 'assigned_to_me' as ChatFilter,
     nextChatCursor: null as ChatCursor | null,
     nextMessageCursor: null as number | null,
     loadingChats: false,

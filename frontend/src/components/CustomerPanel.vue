@@ -12,6 +12,13 @@ const selectedOperatorId = ref<number | null>(null)
 
 const chat = computed(() => chats.selectedChat)
 const operators = computed(() => admin.users.filter((user) => user.is_active && user.role === 'operator'))
+const isAssignedToMe = computed(() => chat.value?.assigned_operator?.id === auth.user?.id)
+const canReleaseChat = computed(() => Boolean(chat.value?.assigned_operator && (auth.isAdmin || isAssignedToMe.value)))
+const canCompleteChat = computed(() => Boolean(
+  chat.value
+  && chat.value.status !== 'closed'
+  && (auth.isAdmin || isAssignedToMe.value),
+))
 
 onMounted(() => {
   if (auth.isAdmin && admin.users.length === 0) admin.load()
@@ -27,10 +34,25 @@ async function adminAssign() {
   chats.upsertChat(updated)
 }
 
-async function forceRelease() {
-  if (!chat.value) return
-  const updated = await admin.forceReleaseChat(chat.value.id)
-  chats.upsertChat(updated)
+async function releaseChat() {
+  if (!canReleaseChat.value || !chat.value) return
+
+  if (auth.isAdmin) {
+    const updated = await admin.forceReleaseChat(chat.value.id)
+    chats.upsertChat(updated)
+    return
+  }
+
+  await chats.releaseSelected()
+}
+
+async function completeChat() {
+  if (!canCompleteChat.value) return
+
+  const confirmed = window.confirm('Завершить диалог? Он уйдёт в закрытые, а новое входящее сообщение снова откроет его.')
+  if (!confirmed) return
+
+  await chats.closeSelected()
 }
 </script>
 
@@ -58,6 +80,8 @@ async function forceRelease() {
         <dd>{{ chat.assigned_operator?.name || 'Свободен' }}</dd>
         <dt>Последняя активность</dt>
         <dd>{{ formatDateTimeWithYear(chat.assignment_last_activity_at || chat.last_message_at) }}</dd>
+        <dt>Состояние</dt>
+        <dd>{{ chat.status === 'closed' ? 'Завершён' : 'Открыт' }}</dd>
       </dl>
 
       <section v-if="auth.isAdmin" class="admin-chat-tools" aria-label="Оператор чата">
@@ -66,7 +90,27 @@ async function forceRelease() {
           <option v-for="operator in operators" :key="operator.id" :value="operator.id">{{ operator.name }}</option>
         </select>
         <button class="primary-button compact" type="button" :disabled="!selectedOperatorId" @click="adminAssign">Назначить</button>
-        <button class="secondary-button compact" type="button" :disabled="!chat.assigned_operator" @click="forceRelease">Освободить</button>
+      </section>
+
+      <section v-if="canReleaseChat || canCompleteChat || chat.status === 'closed'" class="dialog-state-tools" aria-label="Состояние диалога">
+        <strong>Состояние диалога</strong>
+        <button
+          v-if="canReleaseChat"
+          class="secondary-button compact"
+          type="button"
+          @click="releaseChat"
+        >
+          Освободить
+        </button>
+        <button
+          v-if="canCompleteChat"
+          class="secondary-button danger-button compact"
+          type="button"
+          @click="completeChat"
+        >
+          Завершить диалог
+        </button>
+        <span v-else class="assignment-chip">Диалог завершён</span>
       </section>
     </template>
   </aside>
