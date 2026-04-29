@@ -303,10 +303,14 @@ class BackendMvpTest extends TestCase
             ->assertJsonPath('code', 'CHAT_ALREADY_ASSIGNED');
         $this->getJson('/api/v1/chats?filter=all')
             ->assertOk()
-            ->assertJsonCount(0, 'data');
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.read_only', true)
+            ->assertJsonPath('data.0.assigned_operator.id', $owner->id);
         $this->getJson('/api/v1/chats?filter=assigned_to_others')
             ->assertOk()
-            ->assertJsonCount(0, 'data');
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.read_only', true)
+            ->assertJsonPath('data.0.assigned_operator.id', $owner->id);
 
         $admin = User::factory()->create(['role' => 'admin']);
         Sanctum::actingAs($admin);
@@ -324,19 +328,23 @@ class BackendMvpTest extends TestCase
         Sanctum::actingAs($other);
         $message = $chat->messages()->where('direction', 'inbound')->firstOrFail();
         $this->postJson("/api/v1/messages/{$message->id}/read")
-            ->assertForbidden()
-            ->assertJsonPath('code', 'CHAT_NOT_VISIBLE');
+            ->assertOk();
         $this->getJson("/api/v1/chats/{$chat->id}/messages")
-            ->assertForbidden()
-            ->assertJsonPath('code', 'CHAT_NOT_VISIBLE');
+            ->assertOk()
+            ->assertJsonCount(1, 'data');
         $this->getJson("/api/v1/chats/{$chat->id}")
+            ->assertOk()
+            ->assertJsonPath('chat.read_only', true)
+            ->assertJsonPath('chat.assigned_operator.id', $owner->id);
+        $this->postJson("/api/v1/chats/{$chat->id}/messages", ['body' => 'Other cannot write'])
             ->assertForbidden()
-            ->assertJsonPath('code', 'CHAT_NOT_VISIBLE');
+            ->assertJsonPath('code', 'CHAT_NOT_OWNED');
 
         Sanctum::actingAs($owner);
         $this->postJson("/api/v1/messages/{$message->id}/read")
-            ->assertOk()
-            ->assertJsonPath('message.read_by.0.user_id', $owner->id);
+            ->assertOk();
+        $this->assertDatabaseHas('message_reads', ['message_id' => $message->id, 'user_id' => $other->id]);
+        $this->assertDatabaseHas('message_reads', ['message_id' => $message->id, 'user_id' => $owner->id]);
 
         $outbound = $this->postJson("/api/v1/chats/{$chat->id}/messages", ['body' => 'Answer'])
             ->assertCreated()
