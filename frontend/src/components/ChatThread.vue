@@ -48,7 +48,7 @@ watch(() => chats.messages.length, async () => {
         </p>
       </div>
       <div v-if="chats.selectedChat" class="thread-actions">
-        <button v-if="canAssign" class="primary-button compact" type="button" @click="chats.assignSelected()">Взять чат</button>
+        <button v-if="canAssign" class="primary-button compact" type="button" @click="chats.assignSelected()">Взять в работу</button>
         <button v-if="isMine" class="secondary-button compact" type="button" @click="chats.releaseSelected()">Освободить</button>
         <button v-if="isMine || auth.isAdmin" class="secondary-button compact" type="button" @click="chats.closeSelected()">Закрыть</button>
       </div>

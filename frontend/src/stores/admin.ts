@@ -35,8 +35,8 @@ export const useAdminStore = defineStore('admin', {
       Object.assign(user, response.user)
     },
     async resetPassword(user: User, password: string) {
-      if (password.length < 8) {
-        this.error = 'Пароль должен быть не короче 8 символов'
+      if (password.length < 6) {
+        this.error = 'Пароль должен быть не короче 6 символов'
         return
       }
       try {

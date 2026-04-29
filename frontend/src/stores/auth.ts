@@ -16,6 +16,7 @@ export const useAuthStore = defineStore('auth', {
     user: null as User | null,
     loading: false,
     error: null as string | null,
+    registrationAvailable: false,
   }),
   getters: {
     isAuthenticated: (state) => Boolean(state.token),
@@ -30,6 +31,14 @@ export const useAuthStore = defineStore('auth', {
       this.user = user
       sessionStorage.setItem(TOKEN_KEY, token)
       this.initializeTokenProvider()
+    },
+    async loadBootstrapStatus() {
+      try {
+        const response = await authApi.bootstrapStatus()
+        this.registrationAvailable = response.registration_available
+      } catch {
+        this.registrationAvailable = false
+      }
     },
     clearSession() {
       this.token = null
@@ -67,6 +76,7 @@ export const useAuthStore = defineStore('auth', {
       this.error = null
       try {
         const response = await authApi.register(payload)
+        this.registrationAvailable = false
         this.setSession(response.token, response.user)
       } catch (error) {
         this.error = error instanceof Error ? error.message : 'Не удалось зарегистрироваться'

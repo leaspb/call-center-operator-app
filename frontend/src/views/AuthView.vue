@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, reactive } from 'vue'
+import { computed, reactive, watch } from 'vue'
 import { useRoute, useRouter, RouterLink } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 
@@ -9,6 +9,12 @@ const auth = useAuthStore()
 
 const mode = computed(() => route.meta.mode === 'register' ? 'register' : 'login')
 const form = reactive({ name: '', email: '', password: '', password_confirmation: '' })
+
+const showsAuthSwitch = computed(() => mode.value === 'register' || (mode.value === 'login' && auth.registrationAvailable))
+
+watch(mode, (currentMode) => {
+  if (currentMode === 'login') void auth.loadBootstrapStatus()
+}, { immediate: true })
 
 async function submit() {
   try {
@@ -30,10 +36,6 @@ async function submit() {
       <div class="brand-mark" aria-hidden="true">ОП</div>
       <p class="eyebrow">Рабочее место оператора</p>
       <h1 id="auth-title">{{ mode === 'register' ? 'Первичная регистрация администратора' : 'Вход в консоль' }}</h1>
-      <p class="muted">
-        Единая минималистичная панель для обработки диалогов Telegram, контроля очереди отправки и совместной работы операторов.
-      </p>
-
       <form class="auth-form" @submit.prevent="submit">
         <label v-if="mode === 'register'">
           Имя администратора
@@ -45,11 +47,11 @@ async function submit() {
         </label>
         <label>
           Пароль
-          <input v-model="form.password" type="password" autocomplete="current-password" required minlength="12" placeholder="минимум 12 символов" />
+          <input v-model="form.password" type="password" autocomplete="current-password" required minlength="6" placeholder="минимум 6 символов" />
         </label>
         <label v-if="mode === 'register'">
           Повтор пароля
-          <input v-model="form.password_confirmation" type="password" autocomplete="new-password" required minlength="12" />
+          <input v-model="form.password_confirmation" type="password" autocomplete="new-password" required minlength="6" />
         </label>
 
         <p v-if="auth.error" class="form-error" role="alert">{{ auth.error }}</p>
@@ -58,25 +60,10 @@ async function submit() {
         </button>
       </form>
 
-      <p class="auth-switch">
-        <RouterLink v-if="mode === 'login'" to="/register">Первый запуск? Создать администратора</RouterLink>
-        <RouterLink v-else to="/login">Уже есть аккаунт? Войти</RouterLink>
+      <p v-if="showsAuthSwitch" class="auth-switch">
+        <RouterLink v-if="mode === 'login' && auth.registrationAvailable" to="/register">Первый запуск? Создать администратора</RouterLink>
+        <RouterLink v-if="mode === 'register'" to="/login">Уже есть аккаунт? Войти</RouterLink>
       </p>
     </section>
-
-    <aside class="auth-aside" aria-label="Возможности системы">
-      <div>
-        <strong>10 минут</strong>
-        <span>auto-release неактивных назначений</span>
-      </div>
-      <div>
-        <strong>read receipts</strong>
-        <span>операторы видят прочитанные сообщения</span>
-      </div>
-      <div>
-        <strong>outbox</strong>
-        <span>повтор отправки 1/2/5/10/30 минут</span>
-      </div>
-    </aside>
   </main>
 </template>

@@ -110,6 +110,6 @@ class AdminUserController extends Controller
 
     private function passwordRule(): Password
     {
-        return Password::min(12)->letters()->numbers();
+        return Password::min(6)->letters()->numbers();
     }
 }

@@ -17,7 +17,7 @@
 
 ```text
 .
-├── backend/              # Laravel 12 API, очереди, события Reverb, интеграция с Telegram
+├── backend/              # Laravel 12 API, интеграция с Telegram, очереди для гарантированной отправки, realtime-события через Reverb
 ├── frontend/             # Vue 3 + Vite + Pinia + Android-обёртка Capacitor
 ├── docker/               # конфигурация Nginx
 ├── Dockerfile            # PHP runtime-образ для backend/queue/reverb/scheduler
@@ -36,7 +36,7 @@ cp frontend/.env.android.example frontend/.env.android
 ```
 
 - Корневой `.env` — основной файл конфигурации для Docker Compose: его читает Docker Compose, а backend-контейнеры получают настройки через него же.
-- `frontend/.env` содержит доступные в браузере переменные `VITE_*` для локального запуска через `npm run dev`. Секреты бэкенда туда добавлять нельзя. 
+- `frontend/.env` содержит доступные в браузере переменные `VITE_*` для локального запуска через `npm run dev`. Секреты бэкенда туда добавлять нельзя.
 - `frontend/.env.android` содержит отдельные URL для Android-эмулятора или устройства (`10.0.2.2` вместо `localhost`).
 
 Где генерации APP_KEY можно использовать команду:
@@ -48,7 +48,7 @@ docker compose run --rm --no-deps --build backend php artisan key:generate --sho
 ### 2. Собрать и поднять стек приложений
 
 ```bash
-# После заполнения APP_KEY в .env
+# После заполнения APP_KEY, TELEGRAM_BOT_TOKEN и остальных параметров в .env
 docker compose up -d --build
 ```
 
@@ -173,6 +173,8 @@ npm install
 npm run android:sync
 npm run android:open
 ```
+
+`npm run android:sync` дополнительно фиксирует Android Gradle Plugin на `8.12.1`, чтобы проект открывался в Android Studio, где `8.13.0` ещё не поддерживается.
 
 Debug APK из CLI:
 

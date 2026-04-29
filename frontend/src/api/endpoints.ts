@@ -12,6 +12,7 @@ export interface RegisterPayload extends LoginPayload {
 }
 
 export const authApi = {
+  bootstrapStatus: () => apiRequest<{ registration_available: boolean }>('/auth/bootstrap-status'),
   register: (payload: RegisterPayload) => apiRequest<AuthResponse>('/auth/register', { method: 'POST', body: JSON.stringify(payload) }),
   login: (payload: LoginPayload) => apiRequest<AuthResponse>('/auth/login', { method: 'POST', body: JSON.stringify(payload) }),
   logout: () => apiRequest<{ message: string }>('/auth/logout', { method: 'POST', body: '{}' }),

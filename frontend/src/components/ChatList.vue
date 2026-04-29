@@ -6,7 +6,7 @@ import { filterLabels, assignmentLabel } from '../utils/labels'
 import { formatTime } from '../utils/time'
 
 const chats = useChatStore()
-const filters = Object.keys(filterLabels) as ChatFilter[]
+const filters: ChatFilter[] = ['assigned_to_me', 'all', 'unassigned', 'assigned_to_others', 'unread', 'closed']
 const syncLabel = computed(() => chats.lastSyncAt ? formatTime(chats.lastSyncAt.toISOString()) : '—')
 </script>
 
@@ -14,8 +14,7 @@ const syncLabel = computed(() => chats.lastSyncAt ? formatTime(chats.lastSyncAt.
   <aside class="chat-list" aria-label="Список диалогов">
     <div class="panel-heading">
       <div>
-        <p class="eyebrow">Диалоги</p>
-        <h2>Очередь</h2>
+        <h2>Диалоги</h2>
       </div>
       <button class="icon-button" type="button" title="Обновить" @click="chats.loadChats()">↻</button>
     </div>

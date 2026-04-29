@@ -3,8 +3,7 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useAdminStore } from '../stores/admin'
 import { useAuthStore } from '../stores/auth'
 import { useChatStore } from '../stores/chats'
-import { assignmentLabel } from '../utils/labels'
-import { formatDateTime } from '../utils/time'
+import { formatDateTimeWithYear } from '../utils/time'
 
 const auth = useAuthStore()
 const admin = useAdminStore()
@@ -39,7 +38,7 @@ async function forceRelease() {
   <aside class="context-panel" aria-label="Контекст клиента">
     <div class="panel-heading">
       <div>
-        <p class="eyebrow">Контекст</p>
+        <p class="eyebrow">Контекст диалога</p>
         <h2>Клиент</h2>
       </div>
     </div>
@@ -47,33 +46,28 @@ async function forceRelease() {
     <div v-if="!chat" class="empty-copy">Выберите диалог, чтобы увидеть карточку клиента.</div>
     <template v-else>
       <dl class="detail-list">
-        <dt>Имя</dt>
+        <dt>ФИО</dt>
         <dd>{{ chat.external_user.display_name }}</dd>
-        <dt>External ID</dt>
-        <dd>{{ chat.external_user.external_id || '—' }}</dd>
-        <dt>Username</dt>
+        <dt>Ник</dt>
         <dd>{{ chat.external_user.username ? '@' + chat.external_user.username : '—' }}</dd>
-        <dt>First / Last</dt>
-        <dd>{{ [chat.external_user.first_name, chat.external_user.last_name].filter(Boolean).join(' ') || '—' }}</dd>
+        <dt>ID</dt>
+        <dd>{{ chat.external_user.external_id || '—' }}</dd>
         <dt>Платформа</dt>
         <dd>{{ chat.channel.name || chat.channel.code }}</dd>
-        <dt>Назначение</dt>
-        <dd>{{ assignmentLabel(chat.assignment_state, chat.assigned_operator?.name) }}</dd>
+        <dt>Оператор</dt>
+        <dd>{{ chat.assigned_operator?.name || 'Свободен' }}</dd>
         <dt>Последняя активность</dt>
-        <dd>{{ formatDateTime(chat.assignment_last_activity_at || chat.last_message_at) }}</dd>
-        <dt>Auto-release</dt>
-        <dd>10 минут без heartbeat оператора</dd>
+        <dd>{{ formatDateTimeWithYear(chat.assignment_last_activity_at || chat.last_message_at) }}</dd>
       </dl>
 
-      <section v-if="auth.isAdmin" class="admin-chat-tools" aria-label="Админ-действия с чатом">
-        <strong>Админ-действия</strong>
+      <section v-if="auth.isAdmin" class="admin-chat-tools" aria-label="Оператор чата">
+        <strong>Оператор</strong>
         <select v-model.number="selectedOperatorId" aria-label="Назначить оператору">
           <option v-for="operator in operators" :key="operator.id" :value="operator.id">{{ operator.name }}</option>
         </select>
         <button class="primary-button compact" type="button" :disabled="!selectedOperatorId" @click="adminAssign">Назначить</button>
-        <button class="secondary-button compact" type="button" :disabled="!chat.assigned_operator" @click="forceRelease">Force release</button>
+        <button class="secondary-button compact" type="button" :disabled="!chat.assigned_operator" @click="forceRelease">Освободить</button>
       </section>
     </template>
-
   </aside>
 </template>

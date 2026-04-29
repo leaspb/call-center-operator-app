@@ -5,7 +5,11 @@ const config: CapacitorConfig = {
   appName: 'Call Center Operator',
   webDir: 'dist',
   server: {
-    androidScheme: 'https'
+    // Local Android emulator uses HTTP to reach Docker on the host through 10.0.2.2.
+    // Production builds should point VITE_API_BASE_URL to HTTPS and can remove cleartext.
+    androidScheme: 'http',
+    cleartext: true,
+    allowMixedContent: true,
   }
 };
 

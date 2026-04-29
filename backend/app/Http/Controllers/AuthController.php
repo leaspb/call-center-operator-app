@@ -16,6 +16,11 @@ class AuthController extends Controller
 {
     public function __construct(private readonly AuditLogger $audit) {}
 
+    public function bootstrapStatus(): JsonResponse
+    {
+        return response()->json(['registration_available' => ! User::query()->exists()]);
+    }
+
     public function register(Request $request): JsonResponse
     {
         $data = $request->validate([
@@ -110,6 +115,6 @@ class AuthController extends Controller
 
     private function passwordRule(): Password
     {
-        return Password::min(12)->letters()->numbers();
+        return Password::min(6)->letters()->numbers();
     }
 }

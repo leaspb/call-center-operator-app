@@ -13,6 +13,7 @@ use App\Http\Controllers\TelegramWebhookController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function (): void {
+    Route::get('/auth/bootstrap-status', [AuthController::class, 'bootstrapStatus']);
     Route::post('/auth/register', [AuthController::class, 'register'])->middleware('throttle:auth');
     Route::post('/auth/login', [AuthController::class, 'login'])->middleware('throttle:auth');
     Route::post('/telegram/webhook', [TelegramWebhookController::class, 'store'])->middleware('throttle:telegram-webhook');

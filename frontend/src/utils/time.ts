@@ -12,6 +12,15 @@ const dateFormatter = new Intl.DateTimeFormat('ru-RU', {
   timeZone: 'Europe/Moscow',
 })
 
+const dateWithYearFormatter = new Intl.DateTimeFormat('ru-RU', {
+  day: '2-digit',
+  month: '2-digit',
+  year: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+  timeZone: 'Europe/Moscow',
+})
+
 export function formatTime(value?: string | null): string {
   if (!value) return '—'
   return shortFormatter.format(new Date(value))
@@ -20,6 +29,11 @@ export function formatTime(value?: string | null): string {
 export function formatDateTime(value?: string | null): string {
   if (!value) return '—'
   return dateFormatter.format(new Date(value))
+}
+
+export function formatDateTimeWithYear(value?: string | null): string {
+  if (!value) return '—'
+  return dateWithYearFormatter.format(new Date(value))
 }
 
 export function minutesUntil(value?: string | null): number | null {

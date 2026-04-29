@@ -57,25 +57,32 @@ class BackendMvpTest extends TestCase
 
     public function test_first_registration_creates_admin_and_subsequent_registration_is_blocked(): void
     {
+        $this->getJson('/api/v1/auth/bootstrap-status')
+            ->assertOk()
+            ->assertJsonPath('registration_available', true);
+
         $response = $this->postJson('/api/v1/auth/register', [
             'name' => 'First Admin',
             'email' => 'admin@example.com',
-            'password' => 'StrongPass123',
-            'password_confirmation' => 'StrongPass123',
+            'password' => 'Abc123',
+            'password_confirmation' => 'Abc123',
         ]);
 
         $response->assertCreated()->assertJsonPath('user.role', 'admin')->assertJsonStructure(['token']);
         $user = User::firstOrFail();
         $this->assertSame('first-admin', $user->bootstrap_admin_key);
-        $this->assertTrue(Hash::check('StrongPass123', $user->password));
-        $this->assertNotSame('StrongPass123', $user->password);
+        $this->assertTrue(Hash::check('Abc123', $user->password));
+        $this->assertNotSame('Abc123', $user->password);
         $this->assertNotNull(DB::table('personal_access_tokens')->where('tokenable_id', $user->id)->value('expires_at'));
+        $this->getJson('/api/v1/auth/bootstrap-status')
+            ->assertOk()
+            ->assertJsonPath('registration_available', false);
 
         $this->postJson('/api/v1/auth/register', [
             'name' => 'Second',
             'email' => 'second@example.com',
-            'password' => 'StrongPass123',
-            'password_confirmation' => 'StrongPass123',
+            'password' => 'Abc123',
+            'password_confirmation' => 'Abc123',
         ])->assertForbidden()->assertJsonPath('code', 'REGISTRATION_CLOSED');
     }
 
@@ -107,16 +114,16 @@ class BackendMvpTest extends TestCase
         $created = $this->postJson('/api/v1/admin/users', [
             'name' => 'Operator',
             'email' => 'operator@example.com',
-            'password' => 'StrongPass123',
+            'password' => 'Abc123',
             'role' => 'operator',
         ])->assertCreated()->json('user');
 
         $operator = User::findOrFail($created['id']);
-        $this->assertTrue(Hash::check('StrongPass123', $operator->password));
+        $this->assertTrue(Hash::check('Abc123', $operator->password));
 
         $this->patchJson("/api/v1/admin/users/{$operator->id}/role", ['role' => 'admin'])
             ->assertOk()->assertJsonPath('user.role', 'admin');
-        $this->postJson("/api/v1/admin/users/{$operator->id}/reset-password", ['password' => 'NewSecret1234'])->assertOk();
+        $this->postJson("/api/v1/admin/users/{$operator->id}/reset-password", ['password' => 'New123'])->assertOk();
         $this->patchJson("/api/v1/admin/users/{$operator->id}/status", ['is_active' => false])
             ->assertOk()
             ->assertJsonPath('user.is_active', false);
@@ -124,7 +131,7 @@ class BackendMvpTest extends TestCase
         $operator->refresh();
         $this->assertSame('admin', $operator->role);
         $this->assertFalse($operator->is_active);
-        $this->assertTrue(Hash::check('NewSecret1234', $operator->password));
+        $this->assertTrue(Hash::check('New123', $operator->password));
         $this->assertDatabaseHas('audit_logs', ['event_type' => 'admin.user_role_changed', 'target_id' => $operator->id]);
         $this->assertDatabaseHas('audit_logs', ['event_type' => 'admin.user_password_reset', 'target_id' => $operator->id]);
         $this->assertDatabaseHas('audit_logs', ['event_type' => 'admin.user_status_changed', 'target_id' => $operator->id]);

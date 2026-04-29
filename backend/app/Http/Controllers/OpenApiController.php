@@ -36,7 +36,7 @@ class OpenApiController extends Controller
                         ],
                     ],
                     'Message' => ['type' => 'object', 'properties' => ['id' => ['type' => 'integer'], 'chat_id' => ['type' => 'integer'], 'direction' => ['type' => 'string', 'enum' => ['inbound', 'outbound']], 'type' => ['type' => 'string', 'enum' => ['text', 'unsupported_message']], 'body' => ['type' => 'string', 'nullable' => true], 'delivery_status' => ['type' => 'string', 'nullable' => true], 'read_by' => ['type' => 'array']]],
-                    'Password' => ['type' => 'string', 'minLength' => 12, 'description' => 'Must contain letters and numbers'],
+                    'Password' => ['type' => 'string', 'minLength' => 6, 'description' => 'Must contain letters and numbers'],
                 ],
             ],
             'paths' => $this->paths(),
@@ -52,6 +52,7 @@ class OpenApiController extends Controller
         $secured = [['bearerAuth' => []]];
 
         return [
+            '/auth/bootstrap-status' => ['get' => ['summary' => 'Check whether first admin registration is available', 'responses' => $ok]],
             '/auth/register' => ['post' => ['summary' => 'Bootstrap first admin', 'responses' => $created]],
             '/auth/login' => ['post' => ['summary' => 'Login and issue Sanctum token', 'responses' => $ok]],
             '/auth/logout' => ['post' => ['security' => $secured, 'summary' => 'Logout current token', 'responses' => $noContent]],
